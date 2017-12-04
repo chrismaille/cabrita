@@ -8,33 +8,42 @@ Usage:
 Options:
   -h --help     Show this screen.
   --version     Show version.
+
+Attributes:
+    arguments (TYPE): Description
+    dc_path (TYPE): Description
 """
+import os
+import psutil
+import re
+import subprocess
+import sys
+import yaml
 from asciimatics.event import KeyboardEvent
-from asciimatics.widgets import Frame, Layout, MultiColumnListBox, Widget, Label, TextBox
+from asciimatics.exceptions import ResizeScreenError, StopApplication
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
-from asciimatics.exceptions import ResizeScreenError, StopApplication
-import yaml
-import sys
+from asciimatics.widgets import Frame, Layout, MultiColumnListBox, Widget, Label, TextBox
+from buzio import console, formatStr
 from collections import defaultdict
-import subprocess
-from git import Repo
-from buzio import formatStr
 from docopt import docopt
-import re
-import os
-try:
-    import psutil
-except ImportError:
-    print("This sample requires the psutil package.")
-    print("Please run `pip install psutil` and try again.")
-    sys.exit(0)
+from git import Repo
 
 
 def run_command(
         task,
         get_stdout=False,
         run_stdout=False):
+    """Summary
+
+    Args:
+        task (TYPE): Description
+        get_stdout (bool, optional): Description
+        run_stdout (bool, optional): Description
+
+    Returns:
+        TYPE: Description
+    """
     try:
         if run_stdout:
             command = subprocess.check_output(task, shell=True)
@@ -61,18 +70,33 @@ def run_command(
     return True if not get_stdout else ret.decode('utf-8')
 
 
-class DemoFrame(Frame):
+class StatusFrame(Frame):
+
+    """Summary
+
+    Attributes:
+        dc_path (TYPE): Description
+        palette (TYPE): Description
+        repo (TYPE): Description
+        service (TYPE): Description
+    """
+
     def __init__(self, screen):
-        super(DemoFrame, self).__init__(screen,
-                                        screen.height,
-                                        screen.width,
-                                        has_border=False,
-                                        name="My Form")
+        """Summary
+
+        Args:
+            screen (TYPE): Description
+        """
+        super(StatusFrame, self).__init__(screen,
+                                          screen.height,
+                                          screen.width,
+                                          has_border=False,
+                                          name="My Form")
         # Internal state required for doing periodic updates
         self._last_frame = 0
         self._sort = 5
         self._reverse = True
-        self.dc_path = dc_path
+        self.dc_path = DOCKER_COMPOSE_PATH
 
         # Create the basic form layout...
         layout = Layout([1], fill_frame=True)
@@ -81,6 +105,7 @@ class DemoFrame(Frame):
         self._header.custom_colour = "label"
         self._services = TextBox(1, as_string=True)
         self._services.custom_colour = "label"
+        self._services.disabled = True
         self._list = MultiColumnListBox(
             Widget.FILL_FRAME,
             [16, 25, 20, 10, 10, 10, 10, "100%"],
@@ -103,6 +128,17 @@ class DemoFrame(Frame):
         self.palette["title"] = (Screen.COLOUR_BLACK, Screen.A_NORMAL, Screen.COLOUR_WHITE)
 
     def process_event(self, event):
+        """Summary
+
+        Args:
+            event (TYPE): Description
+
+        Returns:
+            TYPE: Description
+
+        Raises:
+            StopApplication: Description
+        """
         # Do the key handling for this Frame.
         if isinstance(event, KeyboardEvent):
             if event.key_code in [ord('q'), ord('Q'), Screen.ctrl("c")]:
@@ -112,11 +148,19 @@ class DemoFrame(Frame):
             self._last_frame = 0
 
         # Now pass on to lower levels for normal handling of the event.
-        return super(DemoFrame, self).process_event(event)
+        return super(StatusFrame, self).process_event(event)
 
     def get_branch(self, name):
-        if compose_data['services'][name].get('build'):
-            data = compose_data['services'][name]['build']['context']
+        """Summary
+
+        Args:
+            name (TYPE): Description
+
+        Returns:
+            TYPE: Description
+        """
+        if COMPOSE_DATA['services'][name].get('build'):
+            data = COMPOSE_DATA['services'][name]['build']['context']
             s = re.search(r"\w+", data)
             if s:
                 env = s.group(0)
@@ -130,6 +174,11 @@ class DemoFrame(Frame):
         return text
 
     def get_git_status(self):
+        """Summary
+
+        Returns:
+            TYPE: Description
+        """
         text = "--"
         if self.repo.is_dirty():
             text = "Modified"
@@ -144,13 +193,22 @@ class DemoFrame(Frame):
         return text
 
     def check_server(self, name, service_type):
+        """Summary
+
+        Args:
+            name (TYPE): Description
+            service_type (TYPE): Description
+
+        Returns:
+            TYPE: Description
+        """
         if service_type != "server":
             full_name = "{}-{}".format(name, service_type)
         else:
             full_name = name
         found = [
             k
-            for k in compose_data['services']
+            for k in COMPOSE_DATA['services']
             if k == full_name
         ]
         if not found:
@@ -167,6 +225,11 @@ class DemoFrame(Frame):
         return text
 
     def _update(self, frame_no):
+        """Summary
+
+        Args:
+            frame_no (TYPE): Description
+        """
         # Refresh the list view if needed
         if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
             self._last_frame = frame_no
@@ -175,8 +238,8 @@ class DemoFrame(Frame):
             last_selection = self._list.value
             last_start = self._list.start_line
             list_data = []
-            for key in compose_data['services']:
-                self.service = compose_data['services'][key]
+            for key in COMPOSE_DATA['services']:
+                self.service = COMPOSE_DATA['services'][key]
                 service_type = "".join(key.split("-")[-1])
                 if service_type.lower() in ['worker', 'beat', 'flower', 'redis'] \
                         and key != "banks-worker":
@@ -200,7 +263,7 @@ class DemoFrame(Frame):
 
             new_data = [
                 ([
-                    x[0],
+                    formatStr.warning(x[0], use_prefix=False),
                     x[1],
                     x[2],
                     x[3],
@@ -219,47 +282,63 @@ class DemoFrame(Frame):
                 "CPU usage: {}%   Memory available: {}M".format(
                     str(round(psutil.cpu_percent() * 10, 0) / 10),
                     str(int(psutil.virtual_memory().available / 1024 / 1024))
-                    )
                 )
+            )
             self._services.value = (
-                    "PostreSQL: {}    MongoDB: {}    Memcache: {}    Sentry: {}".format(
-                        self.check_server("postgres", "server"),
-                        self.check_server("mongodb", "server"),
-                        self.check_server("memcache", "server"),
-                        self.check_server("sentry", "server"),
-                    )
+                "PostreSQL: {}    MongoDB: {}    Memcache: {}    Sentry: {}".format(
+                    self.check_server("postgres", "server"),
+                    self.check_server("mongodb", "server"),
+                    self.check_server("memcache", "server"),
+                    self.check_server("sentry", "server"),
                 )
+            )
 
         # Now redraw as normal
-        super(DemoFrame, self)._update(frame_no)
+        super(StatusFrame, self)._update(frame_no)
 
     @property
     def frame_update_count(self):
+        """Summary
+
+        Returns:
+            TYPE: Description
+        """
         # Refresh once every 2 seconds by default.
         return 40
 
 
-def demo(screen):
-    screen.play([Scene([DemoFrame(screen)], -1)], stop_on_resize=True)
+def status(screen):
+    """Summary
 
-
-arguments = docopt(__doc__, version="1.0")
-dc_path = arguments['<path>']
-
-if os.path.isfile(dc_path):
-    with open(dc_path, 'r') as file:
-        compose_data = yaml.load(file.read())
-else:
-    raise ValueError("File invalid")
+    Args:
+        screen (TYPE): Description
+    """
+    screen.play([Scene([StatusFrame(screen)], -1)], stop_on_resize=True)
 
 
 def main():
+    """Summary
+    """
     while True:
         try:
-            Screen.wrapper(demo, catch_interrupt=True)
+            Screen.wrapper(status, catch_interrupt=True)
             sys.exit(0)
         except ResizeScreenError:
             pass
+
+
+arguments = docopt(__doc__, version="1.0")
+DOCKER_COMPOSE_PATH = arguments['<path>']
+
+try:
+    with open(DOCKER_COMPOSE_PATH, 'r') as file:
+        COMPOSE_DATA = yaml.load(file.read())
+except IOError as exc:
+    console.error("Cannot open file: {}".format(exc))
+    sys.exit(1)
+except yaml.YAMLError as exc:
+    console.error("Cannot read file: {}".format(exc))
+    sys.exit(1)
 
 
 if __name__ == "__main__":
