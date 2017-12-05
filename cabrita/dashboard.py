@@ -24,7 +24,7 @@ from asciimatics.exceptions import ResizeScreenError, StopApplication
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, Layout, MultiColumnListBox, Widget, Label, TextBox
-from buzio import console, formatStr
+from buzio import console
 from collections import defaultdict
 from docopt import docopt
 from git import Repo
@@ -108,7 +108,7 @@ class StatusFrame(Frame):
         self._services.disabled = True
         self._list = MultiColumnListBox(
             Widget.FILL_FRAME,
-            [16, 25, 20, 10, 10, 10, 10, "100%"],
+            [16, 24, 20, 10, 10, 10, 10, "100%"],
             [],
             titles=["Project", "Branch", "Git", "Server", "Worker", "Beat", "Flower", "Redis"],
             name="mc_list")
@@ -116,8 +116,17 @@ class StatusFrame(Frame):
         layout.add_widget(self._header)
         layout.add_widget(self._services)
         layout.add_widget(self._list)
+        ret = run_command(
+            "cd {} && git status -bs --porcelain".format(DOCKER_COMPOSE_DIR),
+            get_stdout=True
+        )
+        if "ahead" in ret:
+            text = "YOUR DOCKER-COMPOSE FILE IS OUTDATED. Please update."
+        else:
+            text = "File {} is up-to-date.".format(self.dc_path)
         layout.add_widget(
-            Label("File: {}. Press `q` to quit.".format(self.dc_path)))
+            Label("{}. Press `q` to quit.".format(text))
+        )
         self.fix()
 
         # Add my own colour palette
@@ -212,7 +221,7 @@ class StatusFrame(Frame):
             if k == full_name
         ]
         if not found:
-            text = "--"
+            text = ""
         else:
             ret = run_command(
                 'docker ps | grep "{0}$\|{0}_run"'.format(full_name),
@@ -221,7 +230,7 @@ class StatusFrame(Frame):
             if ret:
                 text = "Running"
             else:
-                text = "Stop"
+                text = "--"
         return text
 
     def _update(self, frame_no):
@@ -244,7 +253,7 @@ class StatusFrame(Frame):
                 if service_type.lower() in ['worker', 'beat', 'flower', 'redis'] \
                         and key != "banks-worker":
                     continue
-                if key in ['postgres', 'mongodb', 'migrate', 'memcache', 'traefik']:
+                if key in ['postgres', 'mongodb', 'migrate', 'memcache', 'traefik', 'geru-ngrok', 'geru-ftp']:
                     continue
                 if key.startswith("sentry"):
                     continue
@@ -263,7 +272,7 @@ class StatusFrame(Frame):
 
             new_data = [
                 ([
-                    formatStr.warning(x[0], use_prefix=False),
+                    x[0],
                     x[1],
                     x[2],
                     x[3],
@@ -285,11 +294,13 @@ class StatusFrame(Frame):
                 )
             )
             self._services.value = (
-                "PostreSQL: {}    MongoDB: {}    Memcache: {}    Sentry: {}".format(
+                "PostreSQL: {} - MongoDB: {} - Memcache: {} - Sentry: {} - FTP: {} - Ngrok: {}".format(
                     self.check_server("postgres", "server"),
                     self.check_server("mongodb", "server"),
                     self.check_server("memcache", "server"),
                     self.check_server("sentry", "server"),
+                    self.check_server("geru-ftp", "server"),
+                    self.check_server("geru-ngrok", "server")
                 )
             )
 
@@ -328,7 +339,8 @@ def main():
 
 
 arguments = docopt(__doc__, version="1.0")
-DOCKER_COMPOSE_PATH = arguments['<path>']
+DOCKER_COMPOSE_DIR = arguments['<path>']
+DOCKER_COMPOSE_PATH = os.path.join(DOCKER_COMPOSE_DIR, "docker-compose.yml")
 
 try:
     with open(DOCKER_COMPOSE_PATH, 'r') as file:
