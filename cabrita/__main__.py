@@ -1,3 +1,3 @@
-from cabrita.dashboard import main
+from cabrita.run import run
 
-main()
+run()

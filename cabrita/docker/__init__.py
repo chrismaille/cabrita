@@ -1,0 +1,1 @@
+from cabrita.docker.dash import Dashboard
