@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 
+from datetime import datetime
 from collections import deque, namedtuple
-
-from blessed import Terminal
-
+from buzio import formatStr
 try:
     unichr
 except NameError:
@@ -29,10 +28,19 @@ TBox = namedtuple('TBox', 't x y w h')
 
 
 class Tile(object):
-    def __init__(self, title=None, border_color=None, color=0):
+    def __init__(
+        self,
+        title=None,
+        border_color=None,
+        color=0,
+        terminal=None,
+        main=False
+    ):
         self.title = title
         self.color = color
         self.border_color = border_color
+        self._terminal = terminal
+        self._main = main
 
     def _display(self, tbox, parent):
         """Render current tile
@@ -69,28 +77,27 @@ class Tile(object):
 
         return TBox(tbox.t, tbox.x, tbox.y, tbox.w, tbox.h)
 
-    def _fill_area(self, tbox, char, *a, **kw):  # FIXME
+    def _fill_area(self, tbox, char=""):  # FIXME
         """Fill area with a character
         """
-        # for dx in range(0, height):
-        #    print(tbox.t.move(x + dx, tbox.y) + char * width)
-        pass
+        usable_height = tbox.h - 1
+        usable_width = tbox.w - 1
+        line = "{:{c}^{num}}".format('', c=char, num=usable_width)
+        for count in range(1, usable_height):
+            print(tbox.t.move(tbox.x + count, tbox.y + 1) + line)
 
     def display(self):
         """Render current tile and its items. Recurse into nested splits
         if any.
         """
-        try:
-            t = self._terminal
-        except AttributeError:
-            t = self._terminal = Terminal()
-            tbox = TBox(t, 0, 0, t.width, t.height - 1)
-            self._fill_area(tbox.t, 0, 0, t.width, t.height - 1, 'f')  # FIXME
+        t = self._terminal
+        tbox = TBox(t, 0, 0, t.width, t.height - 1)
+        self._fill_area(tbox)
 
+        if self._main:
+            self._terminal.clear()
         tbox = TBox(t, 0, 0, t.width, t.height - 1)
         self._display(tbox, None)
-        # park cursor in a safe place and reset color
-        print(t.move(t.height - 3, 0) + t.color(0))
 
     def _draw_title(self, tbox, fill_all_width):
         if not self.title:
@@ -101,10 +108,18 @@ class Tile(object):
         if fill_all_width:
             title = ' ' * margin + self.title + \
                 ' ' * (tbox.w - margin - len(self.title))
-            print(tbox.t.move(tbox.x, tbox.y) + col + title)
+            if ":" in title:
+                print(tbox.t.move(tbox.x, tbox.y) + col + "".join(title.split(":")[0]))
+                print(tbox.t.move(tbox.x + tbox.h - 1, tbox.y + 1) + col + title.split(":")[1])
+            else:
+                print(tbox.t.move(tbox.x, tbox.y) + col + title)
         else:
             title = ' ' * margin + self.title + ' ' * margin
-            print(tbox.t.move(tbox.x, tbox.y + margin) + col + title)
+            if ":" in title:
+                print(tbox.t.move(tbox.x, tbox.y + margin) + col + "".join(title.split(":")[0]))
+                print(tbox.t.move(tbox.x + tbox.h - 1, tbox.y + 1) + col + title.split(":")[1])
+            else:
+                print(tbox.t.move(tbox.x, tbox.y + margin) + col + title)
 
 
 class Split(Tile):
@@ -176,7 +191,8 @@ class Text(Tile):
 
 
 class Log(Tile):
-    def __init__(self, *args, **kw):
+    def __init__(self, date_format, *args, **kw):
+        self.date_format = date_format
         self.logs = deque(maxlen=50)
         super(Log, self).__init__(**kw)
 
@@ -196,6 +212,29 @@ class Log(Tile):
                 print(tbox.t.move(tbox.x + i2, tbox.y) + ' ' * tbox.w)
 
     def append(self, msg):
+        self.logs.append(msg)
+
+
+    def _get_header(self):
+        now = datetime.now()
+        date_string = now.strftime(self.date_format)
+        return date_string
+
+    def info(self, msg):
+        self.logs.append(
+            "[{}]".format(self._get_header())
+        )
+        msg = "[INFO]: {}".format(msg)
+        self.logs.append(msg)
+
+    def warn(self, msg):
+        self.logs.append(
+            "[{}]".format(self._get_header())
+        )
+        msg = formatStr.warning(
+            "[WARNING]: {}".format(msg),
+            use_prefix=False
+        )
         self.logs.append(msg)
 
 
@@ -264,6 +303,7 @@ class ColorRangeVGauge(Tile):
     E.g.: green gauge for values below 50, red otherwise:
     colormap=((50, 2), (100, 1))
     """
+
     def __init__(self, val=100, colormap=(), **kw):
         self.colormap = colormap
         super(ColorRangeVGauge, self).__init__(**kw)
@@ -293,6 +333,7 @@ class ColorRangeVGauge(Tile):
 class VChart(Tile):
     """Vertical chart. Values must be between 0 and 100 and can be float.
     """
+
     def __init__(self, val=100, *args, **kw):
         super(VChart, self).__init__(**kw)
         self.value = val
@@ -322,6 +363,7 @@ class VChart(Tile):
 class HChart(Tile):
     """Horizontal chart, filled
     """
+
     def __init__(self, val=100, *args, **kw):
         super(HChart, self).__init__(**kw)
         self.value = val
