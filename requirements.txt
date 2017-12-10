@@ -1,6 +1,5 @@
 blessed==1.14.2
 buzio==1.0.dev59935
--e git+https://c8c9ef3bd93679b35e1d53be669984c8393e0169@github.com/megalus/cabrita.git@965a0a1ba673282c012b18a698ce218bc5d0c7d7#egg=cabrita
 colorama==0.3.9
 dashing==0.1.dev0
 decorator==4.1.2
