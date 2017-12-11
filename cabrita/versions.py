@@ -6,6 +6,7 @@ import requests
 import sys
 from buzio import console
 from distutils.version import LooseVersion
+from pkg_resources import parse_version
 from cabrita import __version__
 from cabrita.utils import run_command
 
@@ -26,7 +27,7 @@ def versions():
         pass
     if data:
         versions = list(data["releases"].keys())
-        versions.sort(key=LooseVersion)
+        versions.sort(key=parse_version)
     return versions
 
 
@@ -41,13 +42,13 @@ def check_version():
     version_data = versions()
     if version_data:
         last_version = version_data[-1]
-    if LooseVersion(last_version) > LooseVersion(__version__) and \
+    if parse_version(last_version) > parse_version(__version__) and \
             ("rc" not in last_version and
                 "b" not in last_version and "dev" not in last_version):
         console.warning(
-            "You're running a outdated version." + "\n" +
-            "Last Version: {}").format(last_version + "\n"
-                                       )
+            "You're running a outdated version.\n" +
+            "Last Version: {}\n".format(last_version)
+        )
         ret = console.confirm("Do you want to update?")
         if ret:
             run_command("sudo pip3 install -U cabrita")
