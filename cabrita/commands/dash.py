@@ -131,43 +131,43 @@ class Dashboard():
             memory_percent = 100
 
         if cpu_percent <= 50:
-            cpu_border_color = 2
+            cpu_color = 2
         elif cpu_percent <= 70:
-            cpu_border_color = 3
+            cpu_color = 3
         else:
-            cpu_border_color = 1
+            cpu_color = 1
 
         if memory_percent <= 20:
-            memory_border_color = 1
+            memory_color = 1
         elif memory_percent <= 50:
-            memory_border_color = 3
+            memory_color = 3
         else:
-            memory_border_color = 2
+            memory_color = 2
 
         if space_percent <= 20:
-            space_border_color = 1
+            space_color = 1
         elif space_percent <= 50:
-            space_border_color = 3
+            space_color = 3
         else:
-            space_border_color = 2
+            space_color = 2
 
         widget = dashing.HSplit(
-            dashing.ColorRangeVGauge(
+            dashing.HGauge(
                 val=cpu_percent,
-                colormap=((50, 2), (70, 3), (100, 1)),
-                border_color=cpu_border_color,
+                color=cpu_color,
+                border_color=cpu_color,
                 title="CPU:{}%".format(cpu_percent)
             ),
-            dashing.ColorRangeVGauge(
+            dashing.HGauge(
                 val=memory_percent,
-                colormap=((20, 1), (50, 3), (100, 2)),
-                border_color=memory_border_color,
+                color=memory_color,
+                border_color=memory_color,
                 title="Free Mem:{}M".format(free_memory)
             ),
-            dashing.ColorRangeVGauge(
+            dashing.HGauge(
                 val=space_percent,
-                colormap=((20, 1), (50, 3), (100, 2)),
-                border_color=space_border_color,
+                color=space_color,
+                border_color=space_color,
                 title="Free Space:{}Gb".format(free_space)
             )
         )
@@ -208,8 +208,10 @@ class Dashboard():
                             services,
                             dashing.HSplit(
                                 infra,
-                                log,
-                                info
+                                dashing.VSplit(
+                                    log,
+                                    info
+                                ),
                             ),
                             terminal=term,
                             main=True
