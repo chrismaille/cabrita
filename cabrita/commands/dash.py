@@ -3,6 +3,7 @@ import os
 import psutil
 import re
 import sys
+import os
 from blessed import Terminal
 from buzio import formatStr
 from cabrita import dashing
@@ -23,10 +24,34 @@ class Dashboard():
 
     def get_compose_data(self):
         if self.path:
+            if "$" in self.path:
+                converted_path_list = []
+                path_list = os.path.split(self.path)
+                for p in path_list:
+                    if "$" in p:
+                        s = re.search(r"\$(\w+)", p)
+                        if s:
+                            env = os.environ.get(s.group(1))
+                        else:
+                            env = p
+                    converted_path_list.append(env)
+                self.path = os.path.join(**converted_path_list)
             self.data = get_yaml(self.path, 'docker-compose.yml')
         else:
+            self.path = self.config['docker-compose']['path']
+            if "$" in self.path:
+                converted_path_list = []
+                path_list = os.path.split(self.path)
+                for p in path_list:
+                    env = p
+                    if "$" in p:
+                        s = re.search(r"\$(\w+)", p)
+                        if s:
+                            env = os.environ.get(s.group(1))
+                    converted_path_list.append(env)
+                self.path = os.path.join(*converted_path_list)
             self.data = get_yaml(
-                path=self.config['docker-compose']['path'],
+                path=self.path,
                 file=self.config['docker-compose']['name']
             )
         self.services = sorted(self.data['services'])
@@ -164,9 +189,8 @@ class Dashboard():
             get_stdout=True
         )
         if 'behind' in ret:
-            self.log.warn('Docker-Compose file is outdated.')
+            self.log.warn('Docker-Compose file is outdated. Please run "geru pull"')
 
-        self.log.info("Testing width")
         return self.log
 
     def run(self):

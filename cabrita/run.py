@@ -1,7 +1,7 @@
 """Cabrita.
 
 Usage:
-  cabrita dash [ -d <path> ] [-c | --config <config> ]
+  cabrita dash [--path=<path>] [--config=<config>]
   cabrita -h | --help
   cabrita --version
 
@@ -42,13 +42,13 @@ def run():
     console.box("Cabrita v{}".format(__version__))
     arguments = docopt(__doc__, version=__version__)
     check_version()
-    if arguments['<config>']:
-        path = arguments['<config>']
+    if arguments['--config']:
+        path = arguments['--config']
     else:
         path = BASE_DIR
     config = get_configuration(path)
     if arguments['dash']:
-        dash = Dashboard(arguments['<path>'], config)
+        dash = Dashboard(arguments['--path'], config)
         dash.run()
 
 
