@@ -3,7 +3,7 @@ import datetime
 from codecs import open
 from os import path
 from setuptools import setup, find_packages
-from buzio import __version__
+from cabrita import __version__
 
 
 here = path.abspath(path.dirname(__file__))
@@ -13,12 +13,14 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = [
-    "asciimatics",
+    "dashing",
+    "tabulate",
     "buzio",
     "docopt",
     "GitPython",
     "psutil",
     "PyYAML",
+    "requests"
 ]
 
 if 'dev' in __version__:
@@ -50,7 +52,7 @@ setup(
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
-            'cabrita=cabrita.dashboard:main'
+            'cabrita=cabrita.run:run'
         ],
     },
 )
