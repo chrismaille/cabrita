@@ -16,6 +16,7 @@ from cabrita import __version__
 from buzio import console
 from docopt import docopt
 from cabrita.commands import Dashboard
+from cabrita.versions import check_version
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -40,6 +41,7 @@ def get_configuration(path=None):
 def run():
     console.box("Cabrita v{}".format(__version__))
     arguments = docopt(__doc__, version=__version__)
+    check_version()
     if arguments['<config>']:
         path = arguments['<config>']
     else:
