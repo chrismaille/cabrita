@@ -4,6 +4,7 @@ import psutil
 import re
 import sys
 import os
+import requests
 from blessed import Terminal
 from buzio import formatStr
 from cabrita import dashing
@@ -183,15 +184,28 @@ class Dashboard():
                 border_color=5
             )
             self.log.info("Cabrita started.Press CTRL-C to end.")
+        return self.log
+
+    def get_check_status(self):
         # Check stack-manager
         ret = run_command(
             "cd {} && git status -bs --porcelain".format(self.path),
             get_stdout=True
         )
         if 'behind' in ret:
-            self.log.warn('Docker-Compose file is outdated. Please run "geru pull"')
-
-        return self.log
+            text = formatStr.error('Docker-Compose file is OUTDATED.\n', use_prefix=False)
+        else:
+            text = formatStr.success('Docker-Compose file is up-to-date.\n', use_prefix=False)
+        # Check Ngrok
+        try:
+            ret = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=1)
+            if ret.status_code == 200:
+                text += formatStr.success("Ngrok is running", use_prefix=False)
+            else:
+                text += formatStr.error("Ngrok is returning ERROR", use_prefix=False)
+        except BaseException:
+            text += formatStr.error("Ngrok is NOT RUNNING", use_prefix=False)
+        return dashing.Text(text, border_color=5, title="Check Status")
 
     def run(self):
         self.get_compose_data()
@@ -204,13 +218,17 @@ class Dashboard():
                         infra = self.get_infra()
                         log = self.get_log()
                         info = self.get_info()
+                        check_status = self.get_check_status()
                         ui = dashing.HSplit(
                             services,
                             dashing.HSplit(
                                 infra,
                                 dashing.VSplit(
                                     log,
-                                    info
+                                    dashing.VSplit(
+                                        check_status,
+                                        info
+                                    )
                                 ),
                             ),
                             terminal=term,
@@ -287,7 +305,11 @@ class Dashboard():
                 get_stdout=True
             )
             if ret:
-                text = formatStr.success("Running", use_prefix=False)
+                s = re.search(r"\((\w+)\)", ret)
+                if s:
+                    text = formatStr.warning(s.group(1), use_prefix=False)
+                else:
+                    text = formatStr.success("Running", use_prefix=False)
             else:
                 text = formatStr.error("Stop", use_prefix=False)
         return text
