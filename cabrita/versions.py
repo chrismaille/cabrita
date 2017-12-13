@@ -49,7 +49,11 @@ def check_version():
             "You're running a outdated version.\n" +
             "Last Version: {}\n".format(last_version)
         )
-        ret = console.confirm("Do you want to update?")
+        ret = console.confirm("Do you want to upgrade?")
         if ret:
-            run_command("sudo pip3 install -U cabrita")
+            result = run_command("sudo pip3 install -U cabrita")
+            if result:
+                print("Operation complete. Please run again.")
+            else:
+                print("There is a error during upgrade. Please try again.")
             sys.exit(0)

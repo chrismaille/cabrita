@@ -189,10 +189,12 @@ class Dashboard():
     def get_check_status(self):
         # Check stack-manager
         ret = run_command(
-            "cd {} && git status -bs --porcelain".format(self.path),
+            "cd {} && git fetch && git status -bs --porcelain".format(self.path),
             get_stdout=True
         )
-        if 'behind' in ret:
+        if not ret:
+            text = formatStr.warning("Can't find Docker-Compose status.\n", use_prefix=False)
+        elif 'behind' in ret:
             text = formatStr.error('Docker-Compose file is OUTDATED.\n', use_prefix=False)
         else:
             text = formatStr.success('Docker-Compose file is up-to-date.\n', use_prefix=False)
