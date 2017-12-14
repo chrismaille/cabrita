@@ -240,7 +240,7 @@ class Dashboard():
                         log = self.get_log()
                         info = self.get_info()
                         check_status = self.get_check_status()
-                        if self.config['layout'] == 'horizontal':
+                        if self.layout == 'horizontal':
                             ui = dashing.HSplit(
                                 big,
                                 dashing.HSplit(
@@ -271,7 +271,7 @@ class Dashboard():
                                 main=True
                             )
                         ui.display()
-                        sleep(self.config['interval'])
+                        sleep(self.interval)
                 except KeyboardInterrupt:
                     print(term.color(0))
                     sys.exit(0)
