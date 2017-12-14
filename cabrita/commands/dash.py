@@ -3,7 +3,6 @@ import os
 import psutil
 import re
 import sys
-import os
 import requests
 from blessed import Terminal
 from buzio import formatStr
@@ -57,11 +56,29 @@ class Dashboard():
             )
         self.services = sorted(self.data['services'])
 
-    def get_services(self):
-        categories = self.config['categories']
-        infra_list = self.config['infra']
+    def get_data_from_version(self):
+        version = self.config.get('version', 0)
+        if version == 0:
+            self.categories = self.config.get('categories', [])
+            self.small_list = self.config.get('infra', [])
+            self.interval = 2
+            self.big_name = "Docker Services"
+            self.small_name = "Services"
+            self.layout = "horizontal"
+            self.check_ngrok = True
+        elif version == 1:
+            self.categories = self.config['box']['big'].get('categories', [])
+            self.small_list = self.config['box']['small'].get('list_only', [])
+            self.interval = self.config.get('interval', 2)
+            self.big_name = self.config['box']['big'].get('name', "Docker Services")
+            self.small_name = self.config['box']['small'].get('name', "Services")
+            self.layout = self.config.get('layout', 'horizontal')
+            self.check_ngrok = self.config.get('check', {}).get('ngrok', False)
+
+
+    def get_big(self):
         ignore = self.config['ignore']
-        table_header = ["Name", "Branch", "Git", "Service"] + categories
+        table_header = ["Name", "Branch", "Git", "Service"] + self.categories
         table_lines = []
         for key in self.services:
             jump = False
@@ -70,13 +87,13 @@ class Dashboard():
                     jump = True
             if jump:
                 continue
-            for name in categories:
+            for name in self.categories:
                 if name.lower() in key.lower():
                     jump = True
             if jump:
                 continue
-            for infra in infra_list:
-                if infra.lower() in key.lower():
+            for s in self.small_list:
+                if s.lower() in key.lower():
                     jump = True
             if jump:
                 continue
@@ -86,7 +103,7 @@ class Dashboard():
                 self._get_git_status(),
                 self._check_server(key),
             ]
-            for cat in categories:
+            for cat in self.categories:
                 for search in self.services:
                     if key.lower() in search.lower() and cat.lower() in search.lower():
                         table_data.append(self._check_server(search))
@@ -98,12 +115,12 @@ class Dashboard():
             table_lines,
             table_header
         )
-        return dashing.Text(text, color=6, border_color=5, title="Docker Apps")
+        return dashing.Text(text, color=6, border_color=5, title=self.big_name)
 
-    def get_infra(self):
-        table_header = ["Name", "Status"]
+    def get_small(self):
+        table_header = ["Name", "Service"]
         table_lines = []
-        for infra in sorted(self.config['infra']):
+        for infra in sorted(self.small_list):
             for service in sorted(self.data['services']):
                 if service in self.config['ignore']:
                     continue
@@ -118,7 +135,7 @@ class Dashboard():
             table_lines,
             table_header
         )
-        return dashing.Text(text, color=6, border_color=5, title="Docker Infra")
+        return dashing.Text(text, color=6, border_color=5, title=self.small_name)
 
     def get_info(self):
         cpu_percent = round(psutil.cpu_percent(interval=None) * 10, 0) / 10
@@ -183,7 +200,7 @@ class Dashboard():
                 color=6,
                 border_color=5
             )
-            self.log.info("Cabrita started.Press CTRL-C to end.")
+            self.log.info("Cabrita has started.Press CTRL-C to end.")
         return self.log
 
     def get_check_status(self):
@@ -199,45 +216,62 @@ class Dashboard():
         else:
             text = formatStr.success('Docker-Compose file is up-to-date.\n', use_prefix=False)
         # Check Ngrok
-        try:
-            ret = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=1)
-            if ret.status_code == 200:
-                text += formatStr.success("Ngrok is running", use_prefix=False)
-            else:
-                text += formatStr.error("Ngrok is returning ERROR", use_prefix=False)
-        except BaseException:
-            text += formatStr.error("Ngrok is NOT RUNNING", use_prefix=False)
+        if self.check_ngrok:
+            try:
+                ret = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=1)
+                if ret.status_code == 200:
+                    text += formatStr.success("Ngrok is running", use_prefix=False)
+                else:
+                    text += formatStr.error("Ngrok is returning ERROR", use_prefix=False)
+            except BaseException:
+                text += formatStr.error("Ngrok is NOT RUNNING", use_prefix=False)
         return dashing.Text(text, border_color=5, title="Check Status")
 
     def run(self):
         self.get_compose_data()
+        self.get_data_from_version()
         term = Terminal()
         with term.fullscreen():
             with term.hidden_cursor():
                 try:
                     while True:
-                        services = self.get_services()
-                        infra = self.get_infra()
+                        big = self.get_big()
+                        small = self.get_small()
                         log = self.get_log()
                         info = self.get_info()
                         check_status = self.get_check_status()
-                        ui = dashing.HSplit(
-                            services,
-                            dashing.HSplit(
-                                infra,
-                                dashing.VSplit(
-                                    log,
+                        if self.config['layout'] == 'horizontal':
+                            ui = dashing.HSplit(
+                                big,
+                                dashing.HSplit(
+                                    small,
                                     dashing.VSplit(
+                                        log,
+                                        dashing.VSplit(
+                                            check_status,
+                                            info
+                                        )
+                                    ),
+                                ),
+                                terminal=term,
+                                main=True
+                            )
+                        else:
+                            ui = dashing.VSplit(
+                                big,
+                                dashing.VSplit(
+                                    small,
+                                    dashing.VSplit(
+                                        log,
                                         check_status,
                                         info
-                                    )
+                                    ),
                                 ),
-                            ),
-                            terminal=term,
-                            main=True
-                        )
+                                terminal=term,
+                                main=True
+                            )
                         ui.display()
-                        sleep(2)
+                        sleep(self.config['interval'])
                 except KeyboardInterrupt:
                     print(term.color(0))
                     sys.exit(0)
