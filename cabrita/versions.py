@@ -53,7 +53,7 @@ def check_version():
         if ret:
             result = run_command("sudo pip3 install -U cabrita")
             if result:
-                print("Operation complete. Please run again.")
+                print("\nOperation complete. Please run again.")
             else:
-                print("There is a error during upgrade. Please try again.")
+                print("\nThere is a error during upgrade. Please try again.")
             sys.exit(0)

@@ -200,10 +200,14 @@ class Dashboard():
         total_memory = int(psutil.virtual_memory().total / 1024 / 1024)
         memory_percent = (free_memory / total_memory) * 100
         free_space = round(psutil.disk_usage("/").free / 1024 / 1024 / 1024, 1)
-        space_percent = round(psutil.disk_usage("/").percent * 10, 0) / 10
+        total_space = round(psutil.disk_usage("/").total / 1024 / 1024 / 1024, 1)
+        space_percent = (free_space / total_space) * 100
 
         if memory_percent > 100:
             memory_percent = 100
+
+        if space_percent > 100:
+            space_percent = 100
 
         if cpu_percent <= 50:
             cpu_color = 2
