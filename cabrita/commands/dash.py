@@ -4,6 +4,7 @@ import psutil
 import re
 import sys
 import requests
+import json
 from blessed import Terminal
 from buzio import formatStr
 from cabrita import dashing
@@ -21,6 +22,7 @@ class Dashboard():
         self.services = None
         self.config = config
         self.log = None
+        self.included_services = []
 
     def get_compose_data(self):
         if self.path:
@@ -66,44 +68,53 @@ class Dashboard():
             self.small_name = "Services"
             self.layout = "horizontal"
             self.check_ngrok = True
+            self.ignore = self.config.get('ignore', [])
         elif version == 1:
-            self.categories = self.config['box']['big'].get('categories', [])
-            self.small_list = self.config['box']['small'].get('list_only', [])
+            self.boxes = self.config['box']
             self.interval = self.config.get('interval', 2)
-            self.big_name = self.config['box']['big'].get('name', "Docker Services")
-            self.small_name = self.config['box']['small'].get('name', "Services")
             self.layout = self.config.get('layout', 'horizontal')
             self.check_ngrok = self.config.get('check', {}).get('ngrok', False)
+            self.ignore = self.config.get('ignore', [])
 
-
-    def get_big(self):
-        ignore = self.config['ignore']
-        table_header = ["Name", "Branch", "Git", "Service"] + self.categories
+    def _make_box(self, box):
         table_lines = []
+        table_header = ['Service']
+        show_git = box.get('show_git', True)
+        categories = box.get('categories', [])
+        list_only = box.get('list_only', [])
+        box_name = box.get('name', box)
         for key in self.services:
+            if key in self.included_services:
+                continue
             jump = False
-            for i in ignore:
+            for i in self.ignore:
                 if i.lower() in key.lower():
                     jump = True
             if jump:
                 continue
-            for name in self.categories:
+            for name in categories:
                 if name.lower() in key.lower():
                     jump = True
             if jump:
                 continue
-            for s in self.small_list:
-                if s.lower() in key.lower():
-                    jump = True
-            if jump:
-                continue
+            if list_only:
+                jump = True
+                for s in list_only:
+                    if s.lower() in key.lower():
+                        jump = False
+                if jump:
+                    continue
+            table_header = ["Service"]
+            if show_git:
+                table_header += ["Git"]
+            table_header += categories
             table_data = [
-                key,
-                self._get_branch(key),
-                self._get_git_status(),
-                self._check_server(key),
+                self.get_status(key=key)
             ]
-            for cat in self.categories:
+            if show_git:
+                table_data.append(self._get_git_status(key))
+            self.included_services.append(key)
+            for cat in categories:
                 for search in self.services:
                     if key.lower() in search.lower() and cat.lower() in search.lower():
                         table_data.append(self._check_server(search))
@@ -115,27 +126,73 @@ class Dashboard():
             table_lines,
             table_header
         )
-        return dashing.Text(text, color=6, border_color=5, title=self.big_name)
+        return dashing.Text(text, color=6, border_color=5, title=box_name)
 
-    def get_small(self):
-        table_header = ["Name", "Service"]
-        table_lines = []
-        for infra in sorted(self.small_list):
-            for service in sorted(self.data['services']):
-                if service in self.config['ignore']:
-                    continue
-                if infra.lower() in service.lower():
-                    table_data = [
-                        service,
-                        self._check_server(service)
-                    ]
-                    table_lines.append(table_data)
+    def get_status(self, key):
+        docker_info = json.loads(
+            run_command(
+                task="docker inspect {}".format(key),
+                get_stdout=True
+            )
+        )[0]
+        if docker_info['State']['Running']:
+            theme = "success"
+        elif docker_info['State']['Paused']:
+            theme = "warning"
+        elif docker_info['State']['Restarting']:
+            theme = "info"
+        else:
+            theme = "error"
+        return formatStr.info(key, theme=theme, use_prefix=False)
 
-        text = tabulate(
-            table_lines,
-            table_header
+    def get_layout(self, term):
+        log = self.get_log()
+        info = self.get_info()
+        check_status = self.get_check_status()
+        large_boxes = []
+        small_boxes = []
+        last_box = None
+        for box in self.boxes:
+            current_box = self.boxes[box]
+            if current_box.get('catch_all', False):
+                last_box = current_box
+                continue
+            size = current_box.get('size', 'small')
+            if size == "small":
+                small_boxes.append(self._make_box(current_box))
+            else:
+                large_boxes.append(self._make_box(current_box))
+        size = last_box.get('size', 'small')
+        if size == "small":
+            small_boxes.insert(0, self._make_box(last_box))
+        else:
+            large_boxes.insert(0, self._make_box(last_box))
+
+        sm = None
+        lg = None
+        if large_boxes:
+            lg = large_boxes
+        st = dashing.VSplit(
+            log,
+            dashing.VSplit(
+                check_status,
+                info
+            )
         )
-        return dashing.Text(text, color=6, border_color=5, title=self.small_name)
+        if small_boxes:
+            sm = dashing.HSplit(*small_boxes, st)
+        else:
+            sm = st
+        if self.layout == "horizontal":
+            func = dashing.HSplit
+        else:
+            func = dashing.VSplit
+        if not lg:
+            ui = func(sm, terminal=term, main=True)
+        else:
+            ui = func(*lg, sm, terminal=term, main=True)
+
+        return ui
 
     def get_info(self):
         cpu_percent = round(psutil.cpu_percent(interval=None) * 10, 0) / 10
@@ -193,7 +250,7 @@ class Dashboard():
 
     def get_log(self):
         if not self.log:
-            # First time
+            # First time checks
             self.log = dashing.Log(
                 date_format=self.config['logging']['date_format'],
                 title="Log",
@@ -201,6 +258,16 @@ class Dashboard():
                 border_color=5
             )
             self.log.info("Cabrita has started.Press CTRL-C to end.")
+        
+        # Unwatched services
+        if self.included_services:
+            name_list = [
+                service
+                for service in self.services
+                if service not in self.included_services and service not in self.ignore
+            ]
+            for name in name_list:
+                self.log.warn("Not watched: {}".format(name))
         return self.log
 
     def get_check_status(self):
@@ -235,41 +302,8 @@ class Dashboard():
             with term.hidden_cursor():
                 try:
                     while True:
-                        big = self.get_big()
-                        small = self.get_small()
-                        log = self.get_log()
-                        info = self.get_info()
-                        check_status = self.get_check_status()
-                        if self.layout == 'horizontal':
-                            ui = dashing.HSplit(
-                                big,
-                                dashing.HSplit(
-                                    small,
-                                    dashing.VSplit(
-                                        log,
-                                        dashing.VSplit(
-                                            check_status,
-                                            info
-                                        )
-                                    ),
-                                ),
-                                terminal=term,
-                                main=True
-                            )
-                        else:
-                            ui = dashing.VSplit(
-                                big,
-                                dashing.VSplit(
-                                    small,
-                                    dashing.VSplit(
-                                        log,
-                                        check_status,
-                                        info
-                                    ),
-                                ),
-                                terminal=term,
-                                main=True
-                            )
+                        self.included_services = []
+                        ui = self.get_layout(term)
                         ui.display()
                         sleep(self.interval)
                 except KeyboardInterrupt:
@@ -299,24 +333,39 @@ class Dashboard():
             text = "Using Image"
         return text
 
-    def _get_git_status(self):
+    def _get_git_status(self, key):
         """Summary
 
         Returns:
             TYPE: Description
         """
-        text = "--"
+        if not self.data['services'][key].get('build', False):
+            return ""
+        up = u'▲'
+        down = u'▼'
+        text = "{} ".format(self._get_branch(key))
+        theme = "success"
         if self.repo.is_dirty():
-            text = formatStr.info("Modified", use_prefix=False)
+            theme = "warning"
         ret = run_command(
             "cd {} && git status -bs --porcelain".format(self.repo.working_dir),
             get_stdout=True
         )
-        if "behind" in ret:
-            text = formatStr.warning("Need to Pull", use_prefix=False)
-        elif "ahead" in ret:
-            text = formatStr.warning("Need to Push", use_prefix=False)
-        return text
+        if "ahead" in ret:
+            s = re.search(r"ahead (\d+)", ret)
+            text += formatStr.success(
+                "{} {}".format(up, s.group(1)),
+                use_prefix=False
+            )
+            theme = "info"
+        elif "behind" in ret:
+            s = re.search(r"behind (\d+)", ret)
+            text += formatStr.error(
+                "{} {} ".format(down, s.group(1)),
+                use_prefix=False
+            )
+            theme = "warning"
+        return formatStr.success(text, theme=theme, use_prefix=False)
 
     def _check_server(self, name):
         """Summary

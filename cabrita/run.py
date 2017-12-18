@@ -22,9 +22,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def get_configuration(path=None):
-    config_file = os.path.join(path, 'cabrita.yml')
     try:
-        with open(config_file, 'r') as file:
+        with open(path, 'r') as file:
             data = yaml.load(file.read())
         return data
     except IOError as exc:
