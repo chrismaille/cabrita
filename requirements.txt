@@ -6,3 +6,4 @@ psutil
 PyYAML
 requests
 ipdb
+Sphinx
