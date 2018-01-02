@@ -17,6 +17,7 @@ def versions():
     Summary: Request all versions registered in PyPI
     Returns: list
     """
+    console.info("Checking for updates...")
     url = "https://pypi.python.org/pypi/cabrita/json"
     data = None
     versions = None

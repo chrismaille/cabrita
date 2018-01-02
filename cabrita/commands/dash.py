@@ -5,6 +5,8 @@ import re
 import sys
 import requests
 import json
+import datetime
+import threading
 from blessed import Terminal
 from buzio import formatStr
 from cabrita import dashing
@@ -23,6 +25,9 @@ class Dashboard():
         self.config = config
         self.log = None
         self.included_services = []
+        self.last_git_check = None
+        self.can_check_git = False
+        self.cache_git = {}
 
     def get_compose_data(self):
         if self.path:
@@ -69,12 +74,14 @@ class Dashboard():
             self.layout = "horizontal"
             self.check_ngrok = True
             self.ignore = self.config.get('ignore', [])
+            self.fetch = 30
         elif version == 1:
             self.boxes = self.config['box']
             self.interval = self.config.get('interval', 2)
             self.layout = self.config.get('layout', 'horizontal')
             self.check_ngrok = self.config.get('check', {}).get('ngrok', False)
             self.ignore = self.config.get('ignore', [])
+            self.fetch = self.config.get('fetch_each', 30)
 
     def _make_box(self, box):
         table_lines = []
@@ -262,7 +269,7 @@ class Dashboard():
                 border_color=5
             )
             self.log.info("Cabrita has started.Press CTRL-C to end.")
-        
+
         # Unwatched services
         if self.included_services:
             name_list = [
@@ -275,7 +282,7 @@ class Dashboard():
         return self.log
 
     def get_check_status(self):
-        # Check stack-manager
+        # Check docker-compose.yml status
         ret = run_command(
             "cd {} && git fetch && git status -bs --porcelain".format(self.path),
             get_stdout=True
@@ -306,6 +313,7 @@ class Dashboard():
             with term.hidden_cursor():
                 try:
                     while True:
+                        self.check_time()
                         self.included_services = []
                         ui = self.get_layout(term)
                         ui.display()
@@ -337,12 +345,34 @@ class Dashboard():
             text = "Using Image"
         return text
 
+    def run_fetch(self, key):
+        run_command(
+            "cd {} && git fetch -q".format(self.repo.working_dir),
+            get_stdout=True
+        )
+
+
+    def check_time(self):
+        self.can_check_git = False
+        if not self.last_git_check:
+            self.last_git_check = datetime.datetime.now()
+            self.can_check_git = True
+        else:
+            now = datetime.datetime.now()
+            time_elapsed = now - self.last_git_check
+            if time_elapsed.seconds >= self.fetch:
+                self.last_git_check = now
+                self.can_check_git = True
+
     def _get_git_status(self, key):
         """Summary
 
         Returns:
             TYPE: Description
         """
+        if not self.can_check_git:
+            return self.cache_git.get(key, "")
+
         if not self.data['services'][key].get('build', False):
             return ""
         up = u'▲'
@@ -351,6 +381,8 @@ class Dashboard():
         theme = "success"
         if self.repo.is_dirty():
             theme = "warning"
+        t = threading.Thread(target=self.run_fetch, args=(key,))
+        t.start()
         ret = run_command(
             "cd {} && git status -bs --porcelain".format(self.repo.working_dir),
             get_stdout=True
@@ -369,7 +401,9 @@ class Dashboard():
                 use_prefix=False
             )
             theme = "warning"
-        return formatStr.success(text, theme=theme, use_prefix=False)
+        status = formatStr.success(text, theme=theme, use_prefix=False)
+        self.cache_git[key] = status
+        return status
 
     def _check_server(self, name):
         """Summary

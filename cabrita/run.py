@@ -45,9 +45,11 @@ def run():
         path = arguments['--config']
     else:
         path = BASE_DIR
+    console.info("Loading Configuration...")
     config = get_configuration(path)
     if arguments['dash']:
         dash = Dashboard(arguments['--path'], config)
+        console.info("Reading data...")
         dash.run()
 
 
