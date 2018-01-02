@@ -1,3 +1,4 @@
-# File Reference
+File Reference
+==============
 
 This is the File Reference
