@@ -10,7 +10,7 @@ import threading
 from blessed import Terminal
 from buzio import formatStr
 from cabrita import dashing
-from git import Repo
+from git import Repo, InvalidGitRepositoryError
 from tabulate import tabulate
 from time import sleep
 from cabrita.utils import run_command, get_yaml
@@ -136,21 +136,24 @@ class Dashboard():
         return dashing.Text(text, color=6, border_color=5, title=box_name)
 
     def get_status(self, key):
-        docker_info = json.loads(
-            run_command(
-                task="docker inspect {}".format(key),
-                get_stdout=True
-            )
-        )[0]
-        if docker_info['State']['Running']:
-            theme = "success"
-        elif docker_info['State']['Paused']:
-            theme = "warning"
-        elif docker_info['State']['Restarting']:
-            theme = "info"
-        else:
-            theme = "error"
-        return formatStr.info(key, theme=theme, use_prefix=False)
+        try:
+            docker_info = json.loads(
+                run_command(
+                    task="docker inspect {}".format(key),
+                    get_stdout=True
+                )
+            )[0]
+            if docker_info['State']['Running']:
+                theme = "success"
+            elif docker_info['State']['Paused']:
+                theme = "warning"
+            elif docker_info['State']['Restarting']:
+                theme = "info"
+            else:
+                theme = "error"
+            return formatStr.info(key, theme=theme, use_prefix=False)
+        except BaseException:
+            return formatStr.info(key, theme="dark", use_prefix=False)
 
     def get_layout(self, term):
         log = self.get_log()
@@ -337,20 +340,22 @@ class Dashboard():
             if s:
                 env = s.group(0)
                 path = os.environ.get(env)
-                self.repo = Repo(path)
-                text = self.repo.active_branch.name
+                try:
+                    self.repo = Repo(path)
+                    text = self.repo.active_branch.name
+                except InvalidGitRepositoryError:
+                    text = formatStr.warning("branch not found", use_prefix=False)
             else:
                 text = data
         else:
-            text = "Using Image"
+            text = formatStr.info("Using Image", use_prefix=False)
         return text
 
     def run_fetch(self, key):
         run_command(
-            "cd {} && git fetch -q".format(self.repo.working_dir),
+            "cd {} && git fetch --all -q".format(self.repo.working_dir),
             get_stdout=True
         )
-
 
     def check_time(self):
         self.can_check_git = False
