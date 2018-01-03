@@ -15,6 +15,12 @@ from tabulate import tabulate
 from time import sleep
 from cabrita.utils import run_command, get_yaml
 
+UP = u'▲'
+DOWN = u'▼'
+
+ARROW_UP = u"↑"
+ARROW_DOWN = u"↓"
+
 
 class Dashboard():
 
@@ -119,7 +125,7 @@ class Dashboard():
                 self.get_status(key=key)
             ]
             if show_git:
-                table_data.append(self._get_git_status(key))
+                table_data.append(self._get_git_status(key, box))
             self.included_services.append(key)
             for cat in categories:
                 for search in self.services:
@@ -325,7 +331,7 @@ class Dashboard():
                     print(term.color(0))
                     sys.exit(0)
 
-    def _get_branch(self, name):
+    def _get_branch(self, name, box):
         """Summary
 
         Args:
@@ -343,6 +349,32 @@ class Dashboard():
                 try:
                     self.repo = Repo(path)
                     text = self.repo.active_branch.name
+                    target_branch = box.get("target_branch", False)
+                    if target_branch:
+                        lines_behind = 0
+                        lines_ahead = 0
+                        behind = run_command(
+                            "cd {} && git log {}..{} --oneline 2>/dev/null".format(path, text, target_branch),
+                            get_stdout=True
+                        )
+                        if behind:
+                            lines_behind = len(behind.split("\n"))
+                        # ahead = run_command(
+                        #     "cd {} && git log {}..{} --oneline 2>/dev/null".format(path, target_branch, text),
+                        #     get_stdout=True
+                        # )
+                        # if ahead:
+                        #     lines_ahead = len(ahead.split("\n"))
+                        if lines_behind:
+                            text += " ({}: ".format(target_branch)
+                            if lines_behind > 0:
+                                text += formatStr.error(
+                                    "{} {}".format(ARROW_DOWN, lines_behind),
+                                    use_prefix=False
+                                )
+                            # if lines_ahead > 0:
+                            #     text += "{} {}".format(ARROW_UP, lines_ahead)
+                            text += ")"
                 except InvalidGitRepositoryError:
                     text = formatStr.warning("branch not found", use_prefix=False)
             else:
@@ -369,7 +401,7 @@ class Dashboard():
                 self.last_git_check = now
                 self.can_check_git = True
 
-    def _get_git_status(self, key):
+    def _get_git_status(self, key, box):
         """Summary
 
         Returns:
@@ -380,9 +412,7 @@ class Dashboard():
 
         if not self.data['services'][key].get('build', False):
             return ""
-        up = u'▲'
-        down = u'▼'
-        text = "{} ".format(self._get_branch(key))
+        text = "{} ".format(self._get_branch(key, box))
         theme = "success"
         if self.repo.is_dirty():
             theme = "warning"
@@ -395,14 +425,14 @@ class Dashboard():
         if "ahead" in ret:
             s = re.search(r"ahead (\d+)", ret)
             text += formatStr.success(
-                "{} {}".format(up, s.group(1)),
+                "{} {}".format(UP, s.group(1)),
                 use_prefix=False
             )
             theme = "info"
         elif "behind" in ret:
             s = re.search(r"behind (\d+)", ret)
             text += formatStr.error(
-                "{} {} ".format(down, s.group(1)),
+                "{} {} ".format(DOWN, s.group(1)),
                 use_prefix=False
             )
             theme = "warning"
