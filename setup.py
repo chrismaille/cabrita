@@ -19,7 +19,8 @@ install_requires = [
     "GitPython",
     "psutil",
     "PyYAML",
-    "requests"
+    "requests",
+    "blessed"
 ]
 
 if 'dev' in __version__:
