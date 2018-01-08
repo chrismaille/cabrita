@@ -120,12 +120,13 @@ class Dashboard():
                         jump = False
                 if jump:
                     continue
-            table_header = ["Service"]
+            table_header = ["Service", "Status"]
             if show_git:
                 table_header += ["Git"]
             table_header += categories
             table_data = [
-                self.get_status(key=key)
+                formatStr.info(key, use_prefix=False),
+                self._check_server(name=key)
             ]
             if show_git:
                 table_data.append(self._get_git_status(key, box))
@@ -152,24 +153,7 @@ class Dashboard():
         return dashing.Text(text, color=6, border_color=5, title=box_name)
 
     def get_status(self, key):
-        try:
-            docker_info = json.loads(
-                run_command(
-                    task="docker inspect {}".format(key),
-                    get_stdout=True
-                )
-            )[0]
-            if docker_info['State']['Running']:
-                theme = "success"
-            elif docker_info['State']['Paused']:
-                theme = "warning"
-            elif docker_info['State']['Restarting']:
-                theme = "info"
-            else:
-                theme = "error"
-            return formatStr.info(key, theme=theme, use_prefix=False)
-        except BaseException:
-            return formatStr.info(key, theme="dark", use_prefix=False)
+        return formatStr.info(key, use_prefix=False)
 
     def get_layout(self, term):
         log = self.get_log()
@@ -485,15 +469,39 @@ class Dashboard():
             text = ""
         else:
             ret = run_command(
-                'docker ps | grep "{0}$\|{0}_run"'.format(name),
+                'docker inspect {}'.format(name),
                 get_stdout=True
             )
             if ret:
-                s = re.search(r"\((\w+)\)", ret)
-                if s:
-                    text = formatStr.warning(s.group(1), use_prefix=False)
+                ret = json.loads(ret)[0]
+                if ret['State'].get('Health', False):
+                    stats = ret['State']['Health']['Status'].title()
+                    if ret['State']['Running']:
+                        if ret['State']['Health']['Status'] == 'healthy':
+                            theme = "success"
+                        else:
+                            if ret['State']['Health']['FailingStreak'] > 3:
+                                theme = "error"
+                            else:
+                                theme = "warning"
+                    elif ret['State']['Paused']:
+                        theme = "warning"
+                    elif not ret['State']['Running']:
+                        stats = ret['State']['Status'].title()
+                        theme = "dark"
+                    else:
+                        theme = "error"
                 else:
-                    text = formatStr.success("Running", use_prefix=False)
+                    stats = ret['State']['Status'].title()
+                    if ret['State']['Running']:
+                        theme = "success"
+                    elif ret['State']['Paused']:
+                        theme = "warning"
+                    elif not ret['State']['Running']:
+                        theme = "dark"
+                    else:
+                        theme = "error"  
+                text = formatStr.info(stats, theme=theme, use_prefix=False)
             else:
-                text = formatStr.error("Stop", use_prefix=False)
+                text = formatStr.error("Error", use_prefix=False)
         return text
