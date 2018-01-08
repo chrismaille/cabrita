@@ -125,7 +125,7 @@ class Dashboard():
                 table_header += ["Git"]
             table_header += categories
             table_data = [
-                formatStr.info(key, use_prefix=False),
+                self.get_service_name(key),
                 self._check_server(name=key)
             ]
             if show_git:
@@ -152,8 +152,16 @@ class Dashboard():
         )
         return dashing.Text(text, color=6, border_color=5, title=box_name)
 
-    def get_status(self, key):
-        return formatStr.info(key, use_prefix=False)
+    def get_service_name(self, key):
+        ret = run_command(
+            'docker inspect {}'.format(key),
+            get_stdout=True
+        )
+        if ret:
+            ret = json.loads(ret)[0]
+            if ret['State']['Running']:
+                return formatStr.info(key, use_prefix=False)
+        return formatStr.info(key, theme="dark", use_prefix=False)
 
     def get_layout(self, term):
         log = self.get_log()
