@@ -132,6 +132,7 @@ class Dashboard():
                 table_data.append(self._get_git_status(key, box))
             self.included_services.append(key)
             for cat in categories:
+                found = False
                 for search in self.services:
                     if "_" in key:
                         k = key.lower().split("_")[0]
@@ -142,7 +143,11 @@ class Dashboard():
                     if k in search.lower() and cat.lower() in search.lower():
                         table_data.append(self._check_server(search))
                         self.included_services.append(search)
+                        found = True
                         continue
+                if not found:
+                    table_data.append("--")
+
 
             table_lines.append(table_data)
 
