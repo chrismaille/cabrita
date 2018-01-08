@@ -393,7 +393,7 @@ class Dashboard():
                             text += " ({}: ".format(target_branch)
                             if lines_behind > 0:
                                 text += formatStr.error(
-                                    "{} {}".format(ARROW_DOWN, lines_behind),
+                                    "{} {}".format(ARROW_DOWN, lines_behind - 1),
                                     use_prefix=False
                                 )
                             # if lines_ahead > 0:
