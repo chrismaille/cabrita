@@ -96,6 +96,7 @@ class Dashboard():
         categories = box.get('categories', [])
         list_only = box.get('list_only', [])
         box_name = box.get('name', box)
+        box_filter = box.get('filter', "")
         for key in self.services:
             if key in self.included_services:
                 continue
@@ -103,6 +104,8 @@ class Dashboard():
             for i in self.ignore:
                 if i.lower() in key.lower():
                     jump = True
+            if box_filter and box_filter.lower() not in key.lower():
+                jump = True
             if jump:
                 continue
             for name in categories:
@@ -129,8 +132,15 @@ class Dashboard():
             self.included_services.append(key)
             for cat in categories:
                 for search in self.services:
-                    if key.lower() in search.lower() and cat.lower() in search.lower():
+                    if "_" in key:
+                        k = key.lower().split("_")[0]
+                    elif "-" in key:
+                        k = key.lower().split("-")[0]
+                    else:
+                        k = key.lower()
+                    if k in search.lower() and cat.lower() in search.lower():
                         table_data.append(self._check_server(search))
+                        self.included_services.append(search)
                         continue
 
             table_lines.append(table_data)
@@ -216,7 +226,8 @@ class Dashboard():
         total_memory = int(psutil.virtual_memory().total / 1024 / 1024)
         memory_percent = (free_memory / total_memory) * 100
         free_space = round(psutil.disk_usage("/").free / 1024 / 1024 / 1024, 1)
-        total_space = round(psutil.disk_usage("/").total / 1024 / 1024 / 1024, 1)
+        total_space = round(psutil.disk_usage(
+            "/").total / 1024 / 1024 / 1024, 1)
         space_percent = (free_space / total_space) * 100
 
         if memory_percent > 100:
@@ -277,7 +288,8 @@ class Dashboard():
                 color=6,
                 border_color=5
             )
-            self.log.info("Cabrita has started.Press CTRL-C to end.")
+            self.log.info("Cabrita has started.")
+            self.log.info("Press CTRL-C to end.")
 
         # Unwatched services
         if self.included_services:
@@ -293,25 +305,36 @@ class Dashboard():
     def get_check_status(self):
         # Check docker-compose.yml status
         ret = run_command(
-            "cd {} && git fetch && git status -bs --porcelain".format(self.path),
+            "cd {} && git fetch && git status -bs --porcelain".format(
+                self.path),
             get_stdout=True
         )
         if not ret:
-            text = formatStr.warning("Can't find Docker-Compose status.\n", use_prefix=False)
+            text = formatStr.warning(
+                "Can't find Docker-Compose status.\n",
+                use_prefix=False)
         elif 'behind' in ret:
-            text = formatStr.error('Docker-Compose file is OUTDATED.\n', use_prefix=False)
+            text = formatStr.error(
+                'Docker-Compose is OUTDATED.\n',
+                use_prefix=False)
         else:
-            text = formatStr.success('Docker-Compose file is up-to-date.\n', use_prefix=False)
+            text = formatStr.success(
+                'Docker-Compose is up-to-date.\n',
+                use_prefix=False)
         # Check Ngrok
         if self.check_ngrok:
             try:
-                ret = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=1)
+                ret = requests.get(
+                    "http://127.0.0.1:4040/api/tunnels", timeout=1)
                 if ret.status_code == 200:
-                    text += formatStr.success("Ngrok is running", use_prefix=False)
+                    text += formatStr.success("Ngrok status: running",
+                                              use_prefix=False)
                 else:
-                    text += formatStr.error("Ngrok is returning ERROR", use_prefix=False)
+                    text += formatStr.error("Ngrok status: ERROR",
+                                            use_prefix=False)
             except BaseException:
-                text += formatStr.error("Ngrok is NOT RUNNING", use_prefix=False)
+                text += formatStr.error("Ngrok status: NOT RUNNING",
+                                        use_prefix=False)
         return dashing.Text(text, border_color=5, title="Check Status")
 
     def run(self):
@@ -352,9 +375,10 @@ class Dashboard():
                     target_branch = box.get("target_branch", False)
                     if target_branch:
                         lines_behind = 0
-                        lines_ahead = 0
+                        # lines_ahead = 0
                         behind = run_command(
-                            "cd {} && git log {}..{} --oneline 2>/dev/null".format(path, text, target_branch),
+                            "cd {} && git log {}..{} --oneline 2>/dev/null".format(
+                                path, text, target_branch),
                             get_stdout=True
                         )
                         if behind:
@@ -376,7 +400,8 @@ class Dashboard():
                             #     text += "{} {}".format(ARROW_UP, lines_ahead)
                             text += ")"
                 except InvalidGitRepositoryError:
-                    text = formatStr.warning("branch not found", use_prefix=False)
+                    text = formatStr.warning(
+                        "branch not found", use_prefix=False)
             else:
                 text = data
         else:
@@ -419,7 +444,8 @@ class Dashboard():
         t = threading.Thread(target=self.run_fetch, args=(key,))
         t.start()
         ret = run_command(
-            "cd {} && git status -bs --porcelain".format(self.repo.working_dir),
+            "cd {} && git status -bs --porcelain".format(
+                self.repo.working_dir),
             get_stdout=True
         )
         if "ahead" in ret:
