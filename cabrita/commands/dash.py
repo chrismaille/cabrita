@@ -8,7 +8,7 @@ import json
 import datetime
 import threading
 from blessed import Terminal
-from buzio import formatStr
+from buzio import formatStr, console
 from cabrita import dashing
 from git import Repo, InvalidGitRepositoryError
 from tabulate import tabulate
@@ -44,7 +44,12 @@ class Dashboard():
                     if "$" in p:
                         s = re.search(r"\$(\w+)", p)
                         if s:
-                            env = os.environ.get(s.group(1))
+                            env = os.environ.get(s.group(1), None)
+                            if not env:
+                                console.error(
+                                    "Can't resolve {}".format(
+                                        s.group(1)))
+                                sys.exit(1)
                         else:
                             env = p
                     converted_path_list.append(env)
@@ -60,7 +65,12 @@ class Dashboard():
                     if "$" in p:
                         s = re.search(r"\$(\w+)", p)
                         if s:
-                            env = os.environ.get(s.group(1))
+                            env = os.environ.get(s.group(1), None)
+                            if not env:
+                                console.error(
+                                    "Can't resolve {}".format(
+                                        s.group(1)))
+                                sys.exit(1)
                     converted_path_list.append(env)
                 self.path = os.path.join(*converted_path_list)
             self.data = get_yaml(
@@ -147,7 +157,6 @@ class Dashboard():
                         continue
                 if not found:
                     table_data.append("--")
-
 
             table_lines.append(table_data)
 
@@ -390,7 +399,8 @@ class Dashboard():
                             text += " ({}: ".format(target_branch)
                             if lines_behind > 0:
                                 text += formatStr.error(
-                                    "{} {}".format(ARROW_DOWN, lines_behind - 1),
+                                    "{} {}".format(
+                                        ARROW_DOWN, lines_behind - 1),
                                     use_prefix=False
                                 )
                             # if lines_ahead > 0:
@@ -513,7 +523,7 @@ class Dashboard():
                     elif not ret['State']['Running']:
                         theme = "dark"
                     else:
-                        theme = "error"  
+                        theme = "error"
                 text = formatStr.info(stats, theme=theme, use_prefix=False)
             else:
                 text = formatStr.error("Error", use_prefix=False)
