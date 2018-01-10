@@ -156,7 +156,9 @@ class Dashboard():
                         found = True
                         continue
                 if not found:
-                    table_data.append("--")
+                    table_data.append(
+                        formatStr.info("--", theme="dark", use_prefix=False)
+                    )
 
             table_lines.append(table_data)
 
@@ -420,7 +422,7 @@ class Dashboard():
 
     def run_fetch(self, key):
         run_command(
-            "cd {} && git fetch --all -q".format(self.repo.working_dir),
+            "cd {} && git fetch --all -q 2>/dev/null".format(self.repo.working_dir),
             get_stdout=True
         )
 
