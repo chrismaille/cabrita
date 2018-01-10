@@ -167,15 +167,18 @@ class Dashboard():
         return dashing.Text(text, color=6, border_color=5, title=box_name)
 
     def get_service_name(self, key):
-        ret = run_command(
-            'docker inspect {}'.format(key),
-            get_stdout=True
-        )
-        if ret:
-            ret = json.loads(ret)[0]
-            if ret['State']['Running']:
-                return formatStr.info(key, use_prefix=False)
-        return formatStr.info(key, theme="dark", use_prefix=False)
+        try:
+            ret = run_command(
+                'docker inspect {} 2>/dev/null'.format(key),
+                get_stdout=True
+            )
+            if ret:
+                ret = json.loads(ret)[0]
+                if ret['State']['Running']:
+                    return formatStr.info(key, use_prefix=False)
+            return formatStr.info(key, theme="dark", use_prefix=False)
+        except BaseException as exc:
+            return formatStr.info(key, theme="error", use_prefix=False)
 
     def get_layout(self, term):
         log = self.get_log()
@@ -492,39 +495,42 @@ class Dashboard():
             text = ""
         else:
             ret = run_command(
-                'docker inspect {}'.format(name),
+                'docker inspect {} 2>/dev/null'.format(name),
                 get_stdout=True
             )
             if ret:
-                ret = json.loads(ret)[0]
-                if ret['State'].get('Health', False):
-                    stats = ret['State']['Health']['Status'].title()
-                    if ret['State']['Running']:
-                        if ret['State']['Health']['Status'] == 'healthy':
-                            theme = "success"
-                        else:
-                            if ret['State']['Health']['FailingStreak'] > 3:
-                                theme = "error"
+                try:
+                    ret = json.loads(ret)[0]
+                    if ret['State'].get('Health', False):
+                        stats = ret['State']['Health']['Status'].title()
+                        if ret['State']['Running']:
+                            if ret['State']['Health']['Status'] == 'healthy':
+                                theme = "success"
                             else:
-                                theme = "warning"
-                    elif ret['State']['Paused']:
-                        theme = "warning"
-                    elif not ret['State']['Running']:
+                                if ret['State']['Health']['FailingStreak'] > 3:
+                                    theme = "error"
+                                else:
+                                    theme = "warning"
+                        elif ret['State']['Paused']:
+                            theme = "warning"
+                        elif not ret['State']['Running']:
+                            stats = ret['State']['Status'].title()
+                            theme = "dark"
+                        else:
+                            theme = "error"
+                    else:
                         stats = ret['State']['Status'].title()
-                        theme = "dark"
-                    else:
-                        theme = "error"
-                else:
-                    stats = ret['State']['Status'].title()
-                    if ret['State']['Running']:
-                        theme = "success"
-                    elif ret['State']['Paused']:
-                        theme = "warning"
-                    elif not ret['State']['Running']:
-                        theme = "dark"
-                    else:
-                        theme = "error"
-                text = formatStr.info(stats, theme=theme, use_prefix=False)
+                        if ret['State']['Running']:
+                            theme = "success"
+                        elif ret['State']['Paused']:
+                            theme = "warning"
+                        elif not ret['State']['Running']:
+                            theme = "dark"
+                        else:
+                            theme = "error"
+                    text = formatStr.info(stats, theme=theme, use_prefix=False)
+                except BaseException as exc:
+                    text = formatStr.error("Error", use_prefix=False)
             else:
-                text = formatStr.error("Error", use_prefix=False)
+                text = formatStr.warning("Not Found", use_prefix=False)
         return text
