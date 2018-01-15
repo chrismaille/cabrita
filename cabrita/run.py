@@ -1,56 +1,33 @@
-"""Cabrita.
-
-Usage:
-  cabrita dash [--path=<path>] [--config=<config>]
-  cabrita -h | --help
-  cabrita --version
-
-Options:
-  -h --help     Show this screen.
-  --version     Show version.
-"""
-import os
-import yaml
-import sys
+"""Cabrita main module."""
+import click
 from cabrita import __version__
 from buzio import console
-from docopt import docopt
-from cabrita.commands import Dashboard
+from cabrita.parser import Config
+from cabrita.dash import Dashboard
 from cabrita.versions import check_version
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+@click.command()
+@click.option(
+    '--path',
+    envvar="CABRITA_PATH",
+    prompt='Inform full path to config file',
+    help='Full path for configuration file.',
+    type=click.Path())
+def run(path):
+    """Run main command for cabrita.
 
-def get_configuration(path=None):
-    try:
-        with open(path, 'r') as file:
-            data = yaml.load(file.read())
-        return data
-    except IOError as exc:
-        console.error("Cannot open file: {}".format(exc))
-        sys.exit(1)
-    except yaml.YAMLError as exc:
-        console.error("Cannot read file: {}".format(exc))
-        sys.exit(1)
-    except Exception as exc:
-        console.error("Error: {}".format(exc))
-        sys.exit(1)
-
-
-def run():
+    1. Check version
+    2. Import configuration file
+    3. Run dashboard.
+    """
     console.box("Cabrita v{}".format(__version__))
-    arguments = docopt(__doc__, version=__version__)
     check_version()
-    if arguments['--config']:
-        path = arguments['--config']
-    else:
-        path = BASE_DIR
     console.info("Loading Configuration...")
-    config = get_configuration(path)
-    if arguments['dash']:
-        dash = Dashboard(arguments['--path'], config)
-        console.info("Reading data...")
-        dash.run()
+    config = Config(path).get_config()
+    dash = Dashboard(config)
+    console.info("Reading data...")
+    dash.run()
 
 
 if __name__ == "__main__":

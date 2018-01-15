@@ -15,8 +15,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 install_requires = [
     "tabulate",
     "buzio",
-    "docopt",
-    "GitPython",
+    "click",
     "psutil",
     "PyYAML",
     "requests",

@@ -1,11 +1,14 @@
+"""Utils module."""
 import os
 import sys
 import yaml
+import re
 import subprocess
 from buzio import console
 
 
 def get_yaml(path, file):
+    """Open yaml file."""
     try:
         dcfile = os.path.join(path, file)
         with open(dcfile, 'r') as file:
@@ -26,15 +29,15 @@ def run_command(
         task,
         get_stdout=False,
         run_stdout=False):
-    """Summary
+    """Run subprocess command.
 
     Args:
-        task (TYPE): Description
-        get_stdout (bool, optional): Description
-        run_stdout (bool, optional): Description
+        task (string): the command to run
+        get_stdout (bool, optional): capture stdout
+        run_stdout (bool, optional): capture and run stdout
 
     Returns:
-        TYPE: Description
+        Bool or String: Bool if task was executed or stdout
     """
     try:
         if run_stdout:
@@ -56,7 +59,36 @@ def run_command(
 
         if ret != 0 and not get_stdout:
             return False
+    except KeyboardInterrupt:
+        raise KeyboardInterrupt
     except BaseException:
         return False
 
     return True if not get_stdout else ret.decode('utf-8')
+
+
+def get_path(path, base_path):
+    """Return real path from string.
+
+    Converts environment variables to path
+    Converts relative path to full path
+    """
+    if "$" in path:
+        s = re.search("\${(\w+)}", path)
+        if s:
+            env = s.group(1)
+            name = os.environ.get(env)
+            path_list = [
+                part if "$" not in part else name
+                for part in path.split("/")
+            ]
+            path = os.path.join(*path_list)
+        else:
+            console.error(
+                "Cant find path for {}".format(path)
+            )
+            return False
+    if "." in path:
+        list_path = os.path.join(base_path, path)
+        path = os.path.abspath(list_path)
+    return path

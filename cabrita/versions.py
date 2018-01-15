@@ -5,7 +5,6 @@ Checks version number for upgrades in PyPI
 import requests
 import sys
 from buzio import console
-from distutils.version import LooseVersion
 from pkg_resources import parse_version
 from cabrita import __version__
 from cabrita.utils import run_command
