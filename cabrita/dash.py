@@ -7,6 +7,7 @@ import requests
 import json
 import datetime
 import threading
+from collections import Counter
 from raven import Client
 from blessed import Terminal
 from buzio import formatStr, console
@@ -598,6 +599,10 @@ class Dashboard():
         """Get service docker status.
 
         Run 'docker inspect <name>' and retrieve the response dict
+        If not found <name> try to find:
+
+        1. Intermediate containers: <name>_run
+        2. Scaling containers: <name>_1
 
         Args:
             name (string): service name
@@ -613,49 +618,79 @@ class Dashboard():
             if k == name
         ]
         if not found:
-            text = ""
+            return ""
+
+        text = self._inspect_service(name)
+        if text:
+            return text
+        
+        cmd = "docker ps | grep {name}"
+        services = run_command(
+            cmd.format(name=name),
+            get_stdout=True
+        )
+        if services:
+            service_list = [
+                re.search("\S+$", line).group()
+                for line in services.split("\n")
+                if re.search("\S+$", line)
+            ]
+            status_list = [
+                self._inspect_service(s)
+                for s in service_list
+            ]
+            count = dict(Counter(status_list))
+            line = ", ".join([
+                "{}: {}".format(k, count[k])
+                for k in count
+            ])
+            text = formatStr.info(line, use_prefix=False)
         else:
-            ret = run_command(
-                'docker inspect {} 2>/dev/null'.format(name),
-                get_stdout=True
-            )
-            if ret:
-                try:
-                    ret = json.loads(ret)[0]
-                    if ret['State'].get('Health', False):
-                        if ret['State']['Status'].lower() == 'running':
-                            stats = ret['State']['Health']['Status'].title()
-                        else:
-                            stats = ret['State']['Status'].title()
-                        if ret['State']['Running']:
-                            if ret['State']['Health']['Status'] == 'healthy':
-                                theme = "success"
-                            else:
-                                if ret['State']['Health']['FailingStreak'] > 3:
-                                    theme = "error"
-                                else:
-                                    theme = "warning"
-                        elif ret['State']['Paused']:
-                            theme = "warning"
-                        elif not ret['State']['Running']:
-                            theme = "dark"
-                        else:
-                            theme = "error"
+            text = formatStr.warning("Not Found", use_prefix=False)
+        return text
+
+    def _inspect_service(self, name):
+        ret = run_command(
+            'docker inspect {} 2>/dev/null'.format(name),
+            get_stdout=True
+        )
+        if ret:
+            try:
+                ret = json.loads(ret)[0]
+                if ret['State'].get('Health', False):
+                    if ret['State']['Status'].lower() == 'running':
+                        stats = ret['State']['Health']['Status'].title()
                     else:
                         stats = ret['State']['Status'].title()
-                        if ret['State']['Running']:
+                    if ret['State']['Running']:
+                        if ret['State']['Health']['Status'] == 'healthy':
                             theme = "success"
-                        elif ret['State']['Paused']:
-                            theme = "warning"
-                        elif not ret['State']['Running']:
-                            theme = "dark"
                         else:
-                            theme = "error"
-                    text = formatStr.info(stats, theme=theme, use_prefix=False)
-                except KeyboardInterrupt:
-                    raise KeyboardInterrupt
-                except BaseException as exc:
-                    text = formatStr.error("Error", use_prefix=False)
-            else:
-                text = formatStr.warning("Not Found", use_prefix=False)
+                            if ret['State']['Health']['FailingStreak'] > 3:
+                                theme = "error"
+                            else:
+                                theme = "warning"
+                    elif ret['State']['Paused']:
+                        theme = "warning"
+                    elif not ret['State']['Running']:
+                        theme = "dark"
+                    else:
+                        theme = "error"
+                else:
+                    stats = ret['State']['Status'].title()
+                    if ret['State']['Running']:
+                        theme = "success"
+                    elif ret['State']['Paused']:
+                        theme = "warning"
+                    elif not ret['State']['Running']:
+                        theme = "dark"
+                    else:
+                        theme = "error"
+                text = formatStr.info(stats, theme=theme, use_prefix=False)
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt
+            except BaseException as exc:
+                text = formatStr.error("Error", use_prefix=False)
+        else:
+            text = None # formatStr.warning("Not Found", use_prefix=False)
         return text
