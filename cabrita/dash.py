@@ -214,15 +214,13 @@ class Dashboard():
 
         """
         try:
-            ret = run_command(
-                'docker inspect {} 2>/dev/null'.format(key),
-                get_stdout=True
-            )
-            if ret:
-                ret = json.loads(ret)[0]
-                if ret['State']['Running']:
-                    return formatStr.info(key, use_prefix=False)
-            return formatStr.info(key, theme="dark", use_prefix=False)
+            ret = self._inspect_service(key)
+            if not ret:
+                return formatStr.info(key, theme="dark", use_prefix=False)
+            elif "not found" in ret.lower() or "exited" in ret.lower():
+                return formatStr.info(key, theme="dark", use_prefix=False)
+            else:
+                return formatStr.info(key, use_prefix=False)
         except KeyboardInterrupt:
             raise KeyboardInterrupt
         except BaseException as exc:
@@ -646,7 +644,7 @@ class Dashboard():
             ])
             text = formatStr.info(line, use_prefix=False)
         else:
-            text = formatStr.warning("Not Found", use_prefix=False)
+            text = formatStr.info("Not Found", theme="dark", use_prefix=False)
         return text
 
     def _inspect_service(self, name):
