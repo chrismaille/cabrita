@@ -589,6 +589,12 @@ class Dashboard():
                     use_prefix=False
                 )
                 theme = "warning"
+            if "ahead" in ret:
+                s = re.search(r"ahead (\d+)", ret)
+                text += formatStr.error(
+                    "{} {} ".format(UP, s.group(1)),
+                    use_prefix=False
+                )
         status = formatStr.success(text, theme=theme, use_prefix=False)
         self.cache_git[key] = status
         return status
@@ -644,7 +650,15 @@ class Dashboard():
             ])
             text = formatStr.info(line, use_prefix=False)
         else:
-            text = formatStr.info("Not Found", theme="dark", use_prefix=False)
+            dc_data = [
+                self.data['services'][key]
+                for key in self.data['services']
+                if self.data['services'][key].get("container_name", "") == name
+            ]
+            if dc_data:
+                text = formatStr.info("Not Found", theme="dark", use_prefix=False)
+            else:
+                text = formatStr.info("Stop", theme="dark", use_prefix=False)
         return text
 
     def _inspect_service(self, name):
@@ -690,5 +704,5 @@ class Dashboard():
             except BaseException as exc:
                 text = formatStr.error("Error", use_prefix=False)
         else:
-            text = None # formatStr.warning("Not Found", use_prefix=False)
+            text = None
         return text
