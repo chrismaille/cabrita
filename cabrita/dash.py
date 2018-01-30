@@ -378,7 +378,8 @@ class Dashboard():
             name_list = [
                 service
                 for service in self.services
-                if service not in self.included_services and service not in self.ignore
+                if service not in self.included_services and
+                service not in self.ignore
             ]
             for name in name_list:
                 self.log.warn("Not watched: {}".format(name))
@@ -500,7 +501,9 @@ class Dashboard():
                 }
                 text = self.repo['name']
                 target_branch = box.get("target_branch", False)
-                if target_branch:
+                if target_branch and \
+                    self.repo['name'] != target_branch.replace(
+                        "origin/", ""):
                     lines_behind = 0
                     behind = run_command(
                         "cd {} && git log {}..{} --oneline 2>/dev/null".format(
@@ -534,7 +537,8 @@ class Dashboard():
         """
         try:
             run_command(
-                "cd {} && git fetch --all -q 2>/dev/null".format(self.repo['path']),
+                "cd {} && git fetch --all -q 2>/dev/null".format(
+                    self.repo['path']),
                 get_stdout=True
             )
         except KeyboardInterrupt:
@@ -585,14 +589,13 @@ class Dashboard():
             if "behind" in ret:
                 s = re.search(r"behind (\d+)", ret)
                 text += formatStr.error(
-                    "{} {} ".format(DOWN, s.group(1)),
+                    "{} {} ".format(ARROW_DOWN, s.group(1)),
                     use_prefix=False
                 )
-                theme = "warning"
             if "ahead" in ret:
                 s = re.search(r"ahead (\d+)", ret)
                 text += formatStr.error(
-                    "{} {} ".format(UP, s.group(1)),
+                    "{} {} ".format(ARROW_UP, s.group(1)),
                     use_prefix=False
                 )
         status = formatStr.success(text, theme=theme, use_prefix=False)
@@ -627,7 +630,7 @@ class Dashboard():
         text = self._inspect_service(name)
         if text:
             return text
-        
+
         cmd = "docker ps | grep {name}"
         services = run_command(
             cmd.format(name=name),
@@ -656,7 +659,8 @@ class Dashboard():
                 if self.data['services'][key].get("container_name", "") == name
             ]
             if dc_data:
-                text = formatStr.info("Not Found", theme="dark", use_prefix=False)
+                text = formatStr.info(
+                    "Not Found", theme="dark", use_prefix=False)
             else:
                 text = formatStr.info("Stop", theme="dark", use_prefix=False)
         return text
