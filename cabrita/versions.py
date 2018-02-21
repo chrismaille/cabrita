@@ -7,7 +7,6 @@ import sys
 from buzio import console
 from pkg_resources import parse_version
 from cabrita import __version__
-from cabrita.utils import run_command
 
 
 def versions():
@@ -51,7 +50,7 @@ def check_version():
         )
         ret = console.confirm("Do you want to upgrade?")
         if ret:
-            result = run_command("sudo pip3 install -U cabrita")
+            result = console.run("sudo pip3 install -U cabrita")
             if result:
                 print("\nOperation complete. Please run again.")
             else:

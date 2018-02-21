@@ -138,6 +138,7 @@ class Dashboard():
         list_only = box.get('list_only', [])
         box_name = box.get('name', box)
         box_filter = box.get('filter', "")
+        show_ports = box.get('show_ports', False)
         for key in self.services:
             if key in self.included_services:
                 continue
@@ -162,13 +163,23 @@ class Dashboard():
                 if jump:
                     continue
             table_header = ["Service", "Status"]
+            if show_ports and show_ports == 'column':
+                table_header += ['Port']
             if show_git:
                 table_header += ["Git"]
             table_header += categories
+            service_status = self._check_server(
+                name=key, show_ports=show_ports)
             table_data = [
                 self.get_service_name(key),
-                self._check_server(name=key)
+                service_status
             ]
+            if show_ports and show_ports == 'column':
+                if 'running' in service_status.lower() or\
+                        'healthy' in service_status.lower():
+                    table_data.append(self._get_service_port(key))
+                else:
+                    table_data.append('')
             if show_git:
                 table_data.append(self._get_git_status(key, box))
             self.included_services.append(key)
@@ -182,7 +193,9 @@ class Dashboard():
                     else:
                         k = key.lower()
                     if k in search.lower() and cat.lower() in search.lower():
-                        table_data.append(self._check_server(search))
+                        table_data.append(
+                            self._check_server(
+                                search, show_ports=show_ports))
                         self.included_services.append(search)
                         found = True
                         continue
@@ -557,6 +570,21 @@ class Dashboard():
                 self.last_git_check = now
                 self.can_check_git = True
 
+    def _get_service_port(self, key):
+        external_ports = []
+        ports_list = self.data['services'].get(key, {}).get('ports', [])
+        external_ports = [
+            port.split(":")[0]
+            for port in ports_list
+            if ":" in port
+        ]
+        if not external_ports:
+            return ""
+        elif len(external_ports) == 1:
+            return "".join(external_ports)
+        else:
+            return ",".join(external_ports)
+
     def _get_git_status(self, key, box):
         """Retrieve Git Status from cache or command.
 
@@ -602,7 +630,7 @@ class Dashboard():
         self.cache_git[key] = status
         return status
 
-    def _check_server(self, name):
+    def _check_server(self, name, show_ports):
         """Get service docker status.
 
         Run 'docker inspect <name>' and retrieve the response dict
@@ -613,6 +641,7 @@ class Dashboard():
 
         Args:
             name (string): service name
+            show_ports (obj): False, 'name' or 'column'
 
         Returns
         -------
@@ -629,6 +658,12 @@ class Dashboard():
 
         text = self._inspect_service(name)
         if text:
+            if show_ports and show_ports == 'name' and \
+                ('running' in text.lower() or \
+                    'healthy' in text.lower()):
+                port = self._get_service_port(name)
+                if port:
+                    text += " ({})".format(port)
             return text
 
         cmd = "docker ps | grep {name}"
@@ -652,6 +687,16 @@ class Dashboard():
                 for k in count
             ])
             text = formatStr.info(line, use_prefix=False)
+            if show_ports and show_ports == 'name' and \
+                ('running' in text.lower() or
+                    'healthy' in text.lower()):
+                port_list = [
+                    self._get_service_port(s)
+                    for s in service_list
+                    if self._get_service_port(s) != ""
+                ]
+                if port_list:
+                    text = text + " ({})".format("".join(port_list))
         else:
             dc_data = [
                 self.data['services'][key]
