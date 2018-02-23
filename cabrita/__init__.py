@@ -1,2 +1,2 @@
 """Cabrita initialization."""
-__version__ = "1.6.0.dev"
+__version__ = "1.6.0"
