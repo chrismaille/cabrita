@@ -2,7 +2,7 @@
 import click
 from cabrita import __version__
 from buzio import console
-from cabrita.parser import Config
+from cabrita.core.parser import Config
 from cabrita.dash import Dashboard
 from cabrita.versions import check_version
 
@@ -24,7 +24,7 @@ def run(path):
     console.box("Cabrita v{}".format(__version__))
     check_version()
     console.info("Loading Configuration...")
-    config = Config(path).get_config()
+    config = Config().get_file(path)
     dash = Dashboard(config)
     console.info("Reading data...")
     dash.run()

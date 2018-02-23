@@ -19,8 +19,8 @@ install_requires = [
     "psutil",
     "PyYAML",
     "requests",
-    "blessed",
-    "raven"
+    "raven",
+    "pydashing"
 ]
 
 if 'dev' in __version__:

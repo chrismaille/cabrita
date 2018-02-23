@@ -1,9 +1,7 @@
 """Cabrita Dashboard module."""
 import os
-import psutil
 import re
 import sys
-import requests
 import json
 import datetime
 import threading
@@ -11,10 +9,13 @@ from collections import Counter
 from raven import Client
 from blessed import Terminal
 from buzio import formatStr, console
-from cabrita import gui
+from dashing import dashing
 from tabulate import tabulate
 from time import sleep
-from cabrita.utils import run_command, get_yaml, get_path
+from cabrita.core.utils import run_command, get_yaml, get_path
+from cabrita.core.services import get_check_services
+from cabrita.core.status import get_check_status
+from cabrita.core.info import get_info
 
 UP = u'▲'
 DOWN = u'▼'
@@ -92,9 +93,11 @@ class Dashboard():
             self.big_name = "Docker Services"
             self.small_name = "Services"
             self.layout = "horizontal"
-            self.check_ngrok = True
+            self.check_ngrok = False
             self.ignore = self.config.get('ignore', [])
             self.fetch = 30
+            self.files_to_check = []
+            self.status_file_path = "$HOME/.cabrita"
         elif version == 1:
             self.boxes = self.config['box']
             self.interval = self.config.get('interval', 2)
@@ -102,6 +105,8 @@ class Dashboard():
             self.check_ngrok = self.config.get('check', {}).get('ngrok', False)
             self.ignore = self.config.get('ignore', [])
             self.fetch = self.config.get('fetch_each', 30)
+            self.files_to_check = self.config.get('files', [])
+            self.status_file_path = self.config.get('status_file_path', "$HOME/.cabrita")
 
     def _make_box(self, box):
         """Generate box data.
@@ -128,7 +133,7 @@ class Dashboard():
 
         Returns
         -------
-            obj: gui.Text instance
+            obj: dashing.Text instance
 
         """
         table_lines = []
@@ -210,7 +215,7 @@ class Dashboard():
             table_lines,
             table_header
         )
-        return gui.Text(text, color=6, border_color=5, title=box_name)
+        return dashing.Text(text, color=6, border_color=5, title=box_name)
 
     def get_service_name(self, key):
         """Return service name.
@@ -253,9 +258,9 @@ class Dashboard():
             obj: HSplit or VSplit instance
 
         """
-        log = self.get_log()
-        info = self.get_info()
-        check_status = self.get_check_status()
+        check_status = get_check_status(self)
+        check_services = get_check_services(self)
+        info = get_info()
         large_boxes = []
         small_boxes = []
         last_box = None
@@ -279,21 +284,21 @@ class Dashboard():
         lg = None
         if large_boxes:
             lg = large_boxes
-        st = gui.VSplit(
-            log,
-            gui.VSplit(
-                check_status,
+        st = dashing.VSplit(
+            check_status,
+            dashing.VSplit(
+                check_services,
                 info
             )
         )
         if small_boxes:
-            sm = gui.HSplit(*small_boxes, st)
+            sm = dashing.HSplit(*small_boxes, st)
         else:
             sm = st
         if self.layout == "horizontal":
-            func = gui.HSplit
+            func = dashing.HSplit
         else:
-            func = gui.VSplit
+            func = dashing.VSplit
         if not lg:
             ui = func(sm, terminal=term, main=True)
         else:
@@ -301,83 +306,17 @@ class Dashboard():
 
         return ui
 
-    def get_info(self):
-        """Get machine info using PSUtil.
-
-        Returns
-        -------
-            obj: gui.HSplit instance
-
-        """
-        cpu_percent = round(psutil.cpu_percent(interval=None) * 10, 0) / 10
-        free_memory = int(psutil.virtual_memory().available / 1024 / 1024)
-        total_memory = int(psutil.virtual_memory().total / 1024 / 1024)
-        memory_percent = (free_memory / total_memory) * 100
-        free_space = round(psutil.disk_usage("/").free / 1024 / 1024 / 1024, 1)
-        total_space = round(psutil.disk_usage(
-            "/").total / 1024 / 1024 / 1024, 1)
-        space_percent = (free_space / total_space) * 100
-
-        if memory_percent > 100:
-            memory_percent = 100
-
-        if space_percent > 100:
-            space_percent = 100
-
-        if cpu_percent <= 50:
-            cpu_color = 2
-        elif cpu_percent <= 70:
-            cpu_color = 3
-        else:
-            cpu_color = 1
-
-        if memory_percent <= 20:
-            memory_color = 1
-        elif memory_percent <= 50:
-            memory_color = 3
-        else:
-            memory_color = 2
-
-        if space_percent <= 20:
-            space_color = 1
-        elif space_percent <= 50:
-            space_color = 3
-        else:
-            space_color = 2
-
-        widget = gui.HSplit(
-            gui.HGauge(
-                val=cpu_percent,
-                color=cpu_color,
-                border_color=cpu_color,
-                title="CPU:{}%".format(cpu_percent)
-            ),
-            gui.HGauge(
-                val=memory_percent,
-                color=memory_color,
-                border_color=memory_color,
-                title="Free Mem:{}M".format(free_memory)
-            ),
-            gui.HGauge(
-                val=space_percent,
-                color=space_color,
-                border_color=space_color,
-                title="Free Space:{}Gb".format(free_space)
-            )
-        )
-        return widget
-
     def get_log(self):
         """Generate logs.
 
         Returns
         -------
-            obj: gui.Log instance
+            obj: dashing.Log instance
 
         """
         if not self.log:
             # First time checks
-            self.log = gui.Log(
+            self.log = dashing.Log(
                 date_format=self.config['logging']['date_format'],
                 title="Log",
                 color=6,
@@ -397,50 +336,6 @@ class Dashboard():
             for name in name_list:
                 self.log.warn("Not watched: {}".format(name))
         return self.log
-
-    def get_check_status(self):
-        """Check Docker-Compose and Ngrok status.
-
-        Returns
-        -------
-            obj: gui.Text
-
-        """
-        # Check docker-compose.yml status
-        ret = run_command(
-            "cd {} && git fetch && git status -bs --porcelain".format(
-                self.path),
-            get_stdout=True
-        )
-        if not ret:
-            text = formatStr.warning(
-                "Can't find Docker-Compose status.\n",
-                use_prefix=False)
-        elif 'behind' in ret:
-            text = formatStr.error(
-                'Docker-Compose is OUTDATED.\n',
-                use_prefix=False)
-        else:
-            text = formatStr.success(
-                'Docker-Compose is up-to-date.\n',
-                use_prefix=False)
-        # Check Ngrok
-        if self.check_ngrok:
-            try:
-                ret = requests.get(
-                    "http://127.0.0.1:4040/api/tunnels", timeout=1)
-                if ret.status_code == 200:
-                    text += formatStr.success("Ngrok status: running",
-                                              use_prefix=False)
-                else:
-                    text += formatStr.error("Ngrok status: ERROR",
-                                            use_prefix=False)
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
-            except BaseException:
-                text += formatStr.error("Ngrok status: NOT RUNNING",
-                                        use_prefix=False)
-        return gui.Text(text, border_color=5, title="Check Status")
 
     def run(self):
         """Run main class code.
@@ -659,7 +554,7 @@ class Dashboard():
         text = self._inspect_service(name)
         if text:
             if show_ports and show_ports == 'name' and \
-                ('running' in text.lower() or \
+                ('running' in text.lower() or
                     'healthy' in text.lower()):
                 port = self._get_service_port(name)
                 if port:
