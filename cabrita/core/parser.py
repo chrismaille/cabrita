@@ -3,6 +3,7 @@ import yaml
 import sys
 from buzio import console
 import os
+from cabrita.core.utils import get_path
 
 
 class Config():
@@ -16,8 +17,10 @@ class Config():
     def get_file(self, path):
         """Convert configuration yaml file to python dict."""
         try:
-            with open(path, 'r') as file:
+            full_path = get_path(path, str(os.getcwd()))
+            with open(full_path, 'r') as file:
                 data = yaml.load(file.read())
+                data['file_path'] = path
             return data
         except IOError as exc:
             console.error("Cannot open file: {}".format(exc))
@@ -31,7 +34,8 @@ class Config():
 
     def save_file(self, path, content):
         try:
-            with open(path, 'w') as file:
+            full_path = get_path(path, str(os.getcwd()))
+            with open(full_path, 'w') as file:
                 yaml.dump(content, file)
         except IOError as exc:
             console.error("Cannot open file: {}".format(exc))
@@ -44,4 +48,5 @@ class Config():
             sys.exit(1)
 
     def check_file(self, path):
-        return os.path.isfile(path)
+        full_path = get_path(path, str(os.getcwd()))
+        return os.path.isfile(full_path)

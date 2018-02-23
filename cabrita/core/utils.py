@@ -75,8 +75,10 @@ def get_path(path, base_path):
     """
     if "$" in path:
         s = re.search("\${(\w+)}", path)
+        if not s:
+            s = re.search("(\$\w+)", path)
         if s:
-            env = s.group(1)
+            env = s.group(1).replace("$", "")
             name = os.environ.get(env)
             path_list = [
                 part if "$" not in part else name
@@ -84,11 +86,10 @@ def get_path(path, base_path):
             ]
             path = os.path.join(*path_list)
         else:
-            console.error(
+            raise ValueError(
                 "Cant find path for {}".format(path)
             )
-            return False
-    if "." in path:
+    if path.startswith("."):
         list_path = os.path.join(base_path, path)
         path = os.path.abspath(list_path)
     return path

@@ -98,6 +98,7 @@ class Dashboard():
             self.fetch = 30
             self.files_to_check = []
             self.status_file_path = "$HOME/.cabrita"
+            self.files_to_build = ['Dockerfile']
         elif version == 1:
             self.boxes = self.config['box']
             self.interval = self.config.get('interval', 2)
@@ -106,7 +107,9 @@ class Dashboard():
             self.ignore = self.config.get('ignore', [])
             self.fetch = self.config.get('fetch_each', 30)
             self.files_to_check = self.config.get('files', [])
-            self.status_file_path = self.config.get('status_file_path', "$HOME/.cabrita")
+            self.status_file_path = self.config.get(
+                'status_file_path', "$HOME/.cabrita")
+            self.files_to_build = self.config.get('build_check')
 
     def _make_box(self, box):
         """Generate box data.
@@ -642,10 +645,44 @@ class Dashboard():
                         theme = "dark"
                     else:
                         theme = "error"
+
+                # Check for build
+                test_date = None
+                image_name = ret['Config']['Image']
+                image_data = run_command(
+                    'docker inspect {} 2>/dev/null'.format(image_name),
+                    get_stdout=True
+                )
+                if image_data:
+                    image_data = json.loads(image_data)[0]
+                    date = image_data.get('Created')[:-4] + "Z"
+                    test_date = datetime.datetime.strptime(
+                        date, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+                label = ret['Config']['Labels']['com.docker.compose.service']
+                if test_date and self.data['services'][label].get('build'):
+                    build_path = self.data['services'][label].get('build')
+                    if isinstance(build_path, dict):
+                        build_path = build_path.get('context')
+                    full_path = get_path(build_path, self.path)
+                    list_dates = [
+
+                        datetime.datetime.fromtimestamp(
+                            os.path.getmtime(os.path.join(full_path, file)))
+                        for file in self.files_to_build
+                        if os.path.isfile(os.path.join(full_path, file))
+                    ]
+                    if list_dates:
+                        if max(list_dates) > test_date:
+                            stats = "NEED BUILD"
+                            theme = "error"
+
                 text = formatStr.info(stats, theme=theme, use_prefix=False)
             except KeyboardInterrupt:
                 raise KeyboardInterrupt
             except BaseException as exc:
+                if client:
+                    client.captureException()
                 text = formatStr.error("Error", use_prefix=False)
         else:
             text = None
