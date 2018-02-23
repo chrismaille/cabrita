@@ -109,7 +109,7 @@ class Dashboard():
             self.files_to_check = self.config.get('files', [])
             self.status_file_path = self.config.get(
                 'status_file_path', "$HOME/.cabrita")
-            self.files_to_build = self.config.get('build_check')
+            self.files_to_build = self.config.get('build_check', ['Dockerfile'])
 
     def _make_box(self, box):
         """Generate box data.

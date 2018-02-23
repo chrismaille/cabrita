@@ -68,9 +68,10 @@ def get_check_status(dash):
 
     # Check for status file
     config = Config()
-    if not os.path.isdir(dash.status_file_path):
-        os.makedirs(dash.status_file_path)
-    status_path = os.path.join(dash.status_file_path, "status.yml")
+    status_full_path = get_path(dash.status_file_path, dash.path)
+    if not os.path.isdir(status_full_path):
+        os.makedirs(status_full_path)
+    status_path = os.path.join(status_full_path, "status.yml")
     if config.check_file(status_path):
         data = config.get_file(status_path)
     else:
@@ -84,7 +85,7 @@ def get_check_status(dash):
     table_data.append(['docker-compose.yml', text])
 
     # Files in config
-    filedata = dash.config['files']
+    filedata = dash.config.get('files', [])
     for key in filedata:
         text = _check_git(filedata[key]['source_path'])
         if "ok" in text.lower():
