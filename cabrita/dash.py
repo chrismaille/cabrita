@@ -681,6 +681,7 @@ class Dashboard():
                         date, "%Y-%m-%dT%H:%M:%S.%f %z")
 
                 label = ret['Config']['Labels']['com.docker.compose.service']
+                full_path = None
                 if test_date and self.data['services'][label].get('build'):
                     build_path = self.data['services'][label].get('build')
                     if isinstance(build_path, dict):
@@ -702,9 +703,9 @@ class Dashboard():
                 # Check for build using commit
                 # Ex.: 2018-02-23 18:31:45 -0300
                 if name in self.services_to_check_with_git \
-                        and stats != "NEED BUILD":
+                        and stats != "NEED BUILD" and full_path:
                     ret = run_command(
-                        'git log -1 --pretty=format:"%cd" --date=iso',
+                        'cd {} && git log -1 --pretty=format:"%cd" --date=iso'.format(full_path),
                         get_stdout=True
                     )
                     date_fmt = "%Y-%m-%d %H:%M:%S %z"
