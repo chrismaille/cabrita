@@ -5,6 +5,8 @@ import sys
 import json
 import datetime
 import threading
+import time
+from tzlocal import get_localzone
 from collections import Counter
 from raven import Client
 from blessed import Terminal
@@ -42,9 +44,9 @@ class Dashboard():
         self.config = config
         self.log = None
         self.included_services = []
-        self.last_git_check = None
-        self.can_check_git = False
-        self.cache_git = {}
+        self.last_long_ops = None
+        self.start_long_ops = False
+        self.cache_long_ops = {'git': {}, 'status': None}
         self.repo = None
 
     def get_compose_data(self):
@@ -99,6 +101,7 @@ class Dashboard():
             self.files_to_check = []
             self.status_file_path = "$HOME/.cabrita"
             self.files_to_build = ['Dockerfile']
+            self.services_to_check_with_git = []
         elif version == 1:
             self.boxes = self.config['box']
             self.interval = self.config.get('interval', 2)
@@ -109,7 +112,10 @@ class Dashboard():
             self.files_to_check = self.config.get('files', [])
             self.status_file_path = self.config.get(
                 'status_file_path', "$HOME/.cabrita")
-            self.files_to_build = self.config.get('build_check', ['Dockerfile'])
+            self.files_to_build = self.config.get(
+                'build_check', ['Dockerfile'])
+            self.services_to_check_with_git = self.config.get(
+                'build_check_using_git', [])
 
     def _make_box(self, box):
         """Generate box data.
@@ -261,7 +267,11 @@ class Dashboard():
             obj: HSplit or VSplit instance
 
         """
-        check_status = get_check_status(self)
+        if not self.start_long_ops:
+            check_status = self.cache_long_ops.get('status')
+        else:
+            check_status = get_check_status(self)
+            self.cache_long_ops['status'] = check_status
         check_services = get_check_services(self)
         info = get_info()
         large_boxes = []
@@ -456,17 +466,17 @@ class Dashboard():
             raise KeyboardInterrupt
 
     def check_time(self):
-        """Check time for git refresh data."""
-        self.can_check_git = False
-        if not self.last_git_check:
-            self.last_git_check = datetime.datetime.now()
-            self.can_check_git = True
+        """Check time for start long operations."""
+        self.start_long_ops = False
+        if not self.last_long_ops:
+            self.last_long_ops = datetime.datetime.now()
+            self.start_long_ops = True
         else:
             now = datetime.datetime.now()
-            time_elapsed = now - self.last_git_check
+            time_elapsed = now - self.last_long_ops
             if time_elapsed.seconds >= self.fetch:
-                self.last_git_check = now
-                self.can_check_git = True
+                self.last_long_ops = now
+                self.start_long_ops = True
 
     def _get_service_port(self, key):
         external_ports = []
@@ -493,8 +503,8 @@ class Dashboard():
             key (string): Service name
             box (dict): Current box
         """
-        if not self.can_check_git:
-            return self.cache_git.get(key, "")
+        if not self.start_long_ops:
+            return self.cache_long_ops.get('git', {}).get(key, "")
 
         if not self.data['services'][key].get('build', False):
             return ""
@@ -525,7 +535,7 @@ class Dashboard():
                     use_prefix=False
                 )
         status = formatStr.success(text, theme=theme, use_prefix=False)
-        self.cache_git[key] = status
+        self.cache_long_ops['git'][key] = status
         return status
 
     def _check_server(self, name, show_ports):
@@ -655,9 +665,20 @@ class Dashboard():
                 )
                 if image_data:
                     image_data = json.loads(image_data)[0]
-                    date = image_data.get('Created')[:-4] + "Z"
+
+                    # Get current UTC offset
+                    time_now = datetime.datetime.now()
+                    time_now_utc = datetime.datetime.utcnow()
+                    time_offset_seconds = (
+                        time_now - time_now_utc).total_seconds()
+                    utc_offset = time.gmtime(abs(time_offset_seconds))
+                    utc_string = "{}{}".format(
+                        "-" if time_offset_seconds < 0 else "+",
+                        time.strftime("%H%M", utc_offset)
+                    )
+                    date = image_data.get('Created')[:-4] + " " + utc_string
                     test_date = datetime.datetime.strptime(
-                        date, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        date, "%Y-%m-%dT%H:%M:%S.%f %z")
 
                 label = ret['Config']['Labels']['com.docker.compose.service']
                 if test_date and self.data['services'][label].get('build'):
@@ -666,14 +687,30 @@ class Dashboard():
                         build_path = build_path.get('context')
                     full_path = get_path(build_path, self.path)
                     list_dates = [
-
                         datetime.datetime.fromtimestamp(
-                            os.path.getmtime(os.path.join(full_path, file)))
+                            os.path.getmtime(os.path.join(full_path, file)),
+                            tz=get_localzone()
+                        )
                         for file in self.files_to_build
                         if os.path.isfile(os.path.join(full_path, file))
                     ]
                     if list_dates:
                         if max(list_dates) > test_date:
+                            stats = "NEED BUILD"
+                            theme = "error"
+
+                # Check for build using commit
+                # Ex.: 2018-02-23 18:31:45 -0300
+                if name in self.services_to_check_with_git \
+                        and stats != "NEED BUILD":
+                    ret = run_command(
+                        'git log -1 --pretty=format:"%cd" --date=iso',
+                        get_stdout=True
+                    )
+                    date_fmt = "%Y-%m-%d %H:%M:%S %z"
+                    if ret:
+                        commit_date = datetime.datetime.strptime(ret, date_fmt)
+                        if commit_date > test_date:
                             stats = "NEED BUILD"
                             theme = "error"
 
