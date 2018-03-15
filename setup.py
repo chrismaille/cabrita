@@ -20,7 +20,8 @@ install_requires = [
     "PyYAML",
     "requests",
     "raven",
-    "pydashing"
+    "pydashing",
+    "tzlocal"
 ]
 
 if 'dev' in __version__:
