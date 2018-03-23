@@ -2,10 +2,10 @@
 import click
 from cabrita import __version__
 from buzio import console
-from cabrita.core.parser import Config
-from cabrita.dash import Dashboard
 from cabrita.versions import check_version
-
+from cabrita.components.config import Config
+from cabrita.components.compose import Compose
+from cabrita.components.dashboard import Dashboard
 
 @click.command()
 @click.option(
@@ -23,11 +23,25 @@ def run(path):
     """
     console.box("Cabrita v{}".format(__version__))
     check_version()
+
+    dashboard = Dashboard()
+
     console.info("Loading Configuration...")
-    config = Config().get_file(path)
-    dash = Dashboard(config)
-    console.info("Reading data...")
-    dash.run()
+    dashboard.config = Config(path)
+    dashboard.config.load_data()
+    if not dashboard.config.is_valid:
+        console.error("Please check errors before continue")
+        sys.exit(1)
+
+    console.info("Reading data from docker-compose...")
+    dashboard.compose = Compose()
+    dashboard.compose.load_data()
+    if not dashboard.compose.is_valid:
+        console.error("Please check errors before continue")
+        sys.exit(1)
+
+    console.info("Starting dashboard...")
+    dashboard.run()
 
 
 if __name__ == "__main__":

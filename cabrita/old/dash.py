@@ -14,10 +14,10 @@ from buzio import formatStr, console
 from dashing import dashing
 from tabulate import tabulate
 from time import sleep
-from cabrita.core.utils import run_command, get_yaml, get_path
-from cabrita.core.services import get_check_services
-from cabrita.core.status import get_check_status
-from cabrita.core.info import get_info
+from cabrita.components.utils import run_command, get_yaml, get_path
+from cabrita.components.services import get_check_services
+from cabrita.components.status import get_check_status
+from cabrita.components.info import get_info
 
 UP = u'▲'
 DOWN = u'▼'
