@@ -1,7 +1,7 @@
-from cabrita.abc.files import ConfigABC
+from cabrita.abc.files import ConfigBase
 
 
-class Compose(ConfigABC):
+class Compose(ConfigBase):
 
     @property
     def services(self):

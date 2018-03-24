@@ -1,7 +1,7 @@
-from cabrita.abc.files import ConfigABC
+from cabrita.abc.files import ConfigBase
 
 
-class Config(ConfigABC):
+class Config(ConfigBase):
 
 
     @property
@@ -34,9 +34,9 @@ class Config(ConfigABC):
         if not self.data:
             raise ValueError("Data must be loaded before validation")
 
-        self.version = int(self.data.get("version"))
+        version = int(self.data.get("version"))
 
-        if not self.version:
+        if not version:
             self.console.error("Configuration Version must be informed")
             return False
 

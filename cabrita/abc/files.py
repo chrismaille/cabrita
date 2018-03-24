@@ -35,12 +35,12 @@ def get_path(path, base_path):
     return path
 
 
-class ConfigABC(ABC):
+class ConfigBase(ABC):
 
-    def __init__(self, list_path: List[str] = None):
+    def __init__(self):
 
         self.base_path = os.getcwd()
-        self.list_path = list_path
+        self.list_path = []
         self.full_path = None
         self.data = {}
         self.console = console
@@ -54,6 +54,10 @@ class ConfigABC(ABC):
     @abstractmethod
     def is_valid(self) -> bool:
         pass
+
+    def add_path(self, path):
+        self.list_path.append(path)
+
 
     def load_data(self):
         for path in self.list_path:
