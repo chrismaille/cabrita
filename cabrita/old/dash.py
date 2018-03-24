@@ -1,23 +1,24 @@
 """Cabrita Dashboard module."""
+import datetime
+import json
 import os
 import re
 import sys
-import json
-import datetime
 import threading
 import time
-from tzlocal import get_localzone
 from collections import Counter
-from raven import Client
+from time import sleep
+
 from blessed import Terminal
 from buzio import formatStr, console
-from dashing import dashing
-from tabulate import tabulate
-from time import sleep
-from cabrita.components.utils import run_command, get_yaml, get_path
+from cabrita.components.info import get_info
 from cabrita.components.services import get_check_services
 from cabrita.components.status import get_check_status
-from cabrita.components.info import get_info
+from cabrita.components.utils import run_command, get_yaml, get_path
+from dashing import dashing
+from raven import Client
+from tabulate import tabulate
+from tzlocal import get_localzone
 
 UP = u'▲'
 DOWN = u'▼'

@@ -12,7 +12,8 @@ if os.getenv('CABRITA_SENTRY_DSN'):
 
 class Dashboard:
     def __init__(self, layout: str):
-        self.boxes = []
+        self.small_boxes = []
+        self.large_boxes = []
         self.box_check = None
         self.box_warnings = None
         self.box_stats = None
@@ -24,7 +25,7 @@ class Dashboard:
             with term.fullscreen():
                 with term.hidden_cursor():
                     while True:
-                        ui = self.get_layout(term)
+                        ui = self._get_layout(term)
                         ui.display()
         except KeyboardInterrupt:
             print(term.color(0))
@@ -36,30 +37,13 @@ class Dashboard:
             sys.exit(1)
 
     def add_box(self, box):
-        self.boxes.append(box)
+        box_list = self.small_boxes if box.size == 'small' else self.large_boxes
+        box_list.insert(
+            0 if box.main else len(box_list),
+            box
+        )
 
-    def get_layout(self, term):
-        main_box = [
-            box.widget
-            for box in self.boxes
-            if box.main
-        ][0]
-        small_boxes = [
-            box.widget
-            for box in self.boxes
-            if box.size == "small" and not box.main
-        ]
-        large_boxes = [
-            box.widget
-            for box in self.boxes
-            if box.size == "large" and not box.main
-        ]
-
-        if main_box.size == "small":
-            small_boxes.insert(0, main_box.widget)
-        else:
-            large_boxes.insert(0, main_box.widget)
-
+    def _get_layout(self, term):
 
         st = dashing.VSplit(
             self.box_check.widget,
@@ -68,14 +52,14 @@ class Dashboard:
                 self.box_stats.widget
             )
         )
-        sm = dashing.HSplit(*small_boxes, st) if small_boxes else st
+        sm = dashing.HSplit(*self.small_boxes, st) if self.small_boxes else st
 
         if self.layout == "horizontal":
             func = dashing.HSplit
         else:
             func = dashing.VSplit
-        if large_boxes:
-            ui = func(*large_boxes, sm, terminal=term, main=True)
+        if self.large_boxes:
+            ui = func(*self.large_boxes, sm, terminal=term, main=True)
         else:
             ui = func(sm, terminal=term, main=True)
 

@@ -26,3 +26,7 @@ class Compose(ConfigBase):
     def _check(self):
 
         return True
+
+    def get_from_service(self, service_name, key):
+        return self.services.get(service_name).get(key)
+
