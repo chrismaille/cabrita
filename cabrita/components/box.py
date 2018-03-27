@@ -10,14 +10,15 @@ from buzio import formatStr
 class Box(Thread):
 
 
-    def __init__(self, services: List[str], compose):
+    def __init__(self, services: List[str], docker, git):
         super(Box, self).__init__()
         self._widget = ""
         self.last_update = datetime.now()
         self.interval = 0
         self.data = {}
         self.services = services
-        self.compose = compose
+        self.docker = docker
+        self.git = git
 
     @property
     def can_update(self) -> bool:
@@ -68,13 +69,13 @@ class Box(Thread):
         # Generating lines
         table_lines = []
         for service in self.services:
-            instance = docker.inspect(service)
+            instance = self.docker.status(service)
             table_data = [
                 _format_color('name', instance),
                 _format_color('status', instance)
             ]
             if self.show_git:
-                table_data.append(git.inspect(service))
+                table_data.append(self.git.status(service))
             if self.show_port == 'column':
                 table_data.append(instance.ports)
             for category in self.categories:

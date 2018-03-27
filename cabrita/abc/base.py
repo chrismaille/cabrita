@@ -1,40 +1,15 @@
 import os
 import yaml
-import re
 import sys
 from abc import ABC, abstractmethod
-from buzio import console
+from cabrita.abc.utils import run_command
+from buzio import console, formatStr
+from datetime import datetime, timedelta
+
+from cabrita.abc.utils import get_path
 
 
-def get_path(path, base_path):
-    """Return real path from string.
-
-    Converts environment variables to path
-    Converts relative path to full path
-    """
-    if "$" in path:
-        s = re.search("\${(\w+)}", path)
-        if not s:
-            s = re.search("(\$\w+)", path)
-        if s:
-            env = s.group(1).replace("$", "")
-            name = os.environ.get(env)
-            path_list = [
-                part if "$" not in part else name
-                for part in path.split("/")
-            ]
-            path = os.path.join(*path_list)
-        else:
-            raise ValueError(
-                "Cant find path for {}".format(path)
-            )
-    if path.startswith("."):
-        list_path = os.path.join(base_path, path)
-        path = os.path.abspath(list_path)
-    return path
-
-
-class ConfigBase(ABC):
+class ConfigTemplate(ABC):
 
     def __init__(self):
 
@@ -75,3 +50,35 @@ class ConfigBase(ABC):
             except Exception as exc:
                 console.error("Error: {}".format(exc))
                 raise exc
+
+
+class InspectTemplate(ABC):
+
+    def __init__(self, compose, interval: int):
+
+        self.base_path = os.getcwd()
+        self.run = run_command
+        self.compose = compose
+        self._status = formatStr.info("Fetching...", theme="dark", use_prefix=False)
+        self.interval = interval
+        self.last_update = datetime.now() - timedelta(seconds=self.interval)
+        self.path = None
+
+
+    @abstractmethod
+    def inspect(self, service: str):
+        pass
+
+    @property
+    def can_update(self) -> bool:
+        seconds_elapsed = (datetime.now() - self.last_update).total_seconds()
+        return seconds_elapsed >= self.interval
+
+    def status(self, service):
+        if self.can_update:
+            self.inspect_all()
+        return self._status[service]
+
+    def inspect_all(self):
+        for service in self.compose.services:
+            self._status[service] = self.inspect(service)

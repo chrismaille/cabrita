@@ -1,7 +1,7 @@
-from cabrita.abc.files import ConfigBase
+from cabrita.abc.base import ConfigTemplate
+from cabrita.abc.utils import get_path
 
-
-class Config(ConfigBase):
+class Config(ConfigTemplate):
 
 
     @property
@@ -52,3 +52,39 @@ class Config(ConfigBase):
         return True
 
 
+class Compose(ConfigTemplate):
+
+    @property
+    def services(self):
+        return self.data['services']
+
+    @property
+    def volumes(self):
+        return self.data['volumes']
+
+    @property
+    def networks(self):
+        return self.data['networks']
+
+    @property
+    def is_valid(self) -> bool:
+
+        if not self.data:
+            raise ValueError("Data must be loaded before validation")
+
+        return self._check()
+
+    def is_image(self, service_name):
+        return False if self.get_from_service(service_name, 'build') else True
+
+    def get_build_path(self, service_name: str) -> str:
+        data = self.get_from_service(service_name, 'build')
+        path = data.get('context') if isinstance(data, dict) else data
+        return get_path(path, self.base_path)
+
+    def get_from_service(self, service_name, key):
+        return self.services.get(service_name).get(key)
+
+    def _check(self):
+
+        return True

@@ -1,3 +1,5 @@
+import os
+import re
 import subprocess
 
 def run_command(
@@ -40,3 +42,31 @@ def run_command(
         return False
 
     return True if not get_stdout else ret.decode('utf-8')
+
+
+def get_path(path, base_path):
+    """Return real path from string.
+
+    Converts environment variables to path
+    Converts relative path to full path
+    """
+    if "$" in path:
+        s = re.search("\${(\w+)}", path)
+        if not s:
+            s = re.search("(\$\w+)", path)
+        if s:
+            env = s.group(1).replace("$", "")
+            name = os.environ.get(env)
+            path_list = [
+                part if "$" not in part else name
+                for part in path.split("/")
+            ]
+            path = os.path.join(*path_list)
+        else:
+            raise ValueError(
+                "Cant find path for {}".format(path)
+            )
+    if path.startswith("."):
+        list_path = os.path.join(base_path, path)
+        path = os.path.abspath(list_path)
+    return path
