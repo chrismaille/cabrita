@@ -590,10 +590,13 @@ class Dashboard():
                 for s in service_list
             ]
             count = dict(Counter(status_list))
-            line = ", ".join([
-                "{}: {}".format(k, count[k])
-                for k in count
-            ])
+            if "worker" in name:
+                line = ", ".join([
+                    "{}: {}".format(k, count[k])
+                    for k in count
+                ])
+            else:
+                line = text
             text = formatStr.info(line, use_prefix=False)
             if show_ports and show_ports == 'name' and \
                 ('running' in text.lower() or
@@ -619,8 +622,11 @@ class Dashboard():
         return text
 
     def _inspect_service(self, name):
+        container_name = self.data['services'][name].get('container_name', "")
+        if not container_name:
+            container_name = "stackmanager_{}_1".format(name)
         ret = run_command(
-            'docker inspect {} 2>/dev/null'.format(name),
+            'docker inspect {} 2>/dev/null'.format(container_name),
             get_stdout=True
         )
         if ret:
