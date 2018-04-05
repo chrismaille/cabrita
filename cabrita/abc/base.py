@@ -82,3 +82,4 @@ class InspectTemplate(ABC):
     def inspect_all(self):
         for service in self.compose.services:
             self._status[service] = self.inspect(service)
+        self.last_update = datetime.now()

@@ -6,11 +6,12 @@ from dashing import dashing
 from tabulate import tabulate
 from buzio import formatStr
 
+from cabrita.components.inspect import GitInspect, DockerInspect
+
 
 class Box(Thread):
 
-
-    def __init__(self, services: List[str], docker, git):
+    def __init__(self, services: List[str], docker: DockerInspect, git: GitInspect):
         super(Box, self).__init__()
         self._widget = ""
         self.last_update = datetime.now()
@@ -31,11 +32,9 @@ class Box(Thread):
             self.run()
         return self._widget
 
-
     @widget.setter
     def widget(self, value):
         self._widget = value
-
 
     @property
     def show_git(self) -> bool:
@@ -77,7 +76,7 @@ class Box(Thread):
             if self.show_git:
                 table_data.append(self.git.status(service))
             if self.show_port == 'column':
-                table_data.append(instance.ports)
+                table_data.append(self.docker.ports(service))
             for category in self.categories:
                 table_data.append(self._get_service_category_data(service, category))
             table_lines.append(table_data)
@@ -92,13 +91,3 @@ class Box(Thread):
 def _format_color(field, instance):
     func = getattr(instance.format, formatStr)
     return func(getattr(field, instance), use_prefix=False)
-
-
-
-
-
-
-
-
-
-

@@ -1,32 +1,56 @@
+import json
 import re
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, List, Optional
+
 from buzio import formatStr
-import json
+
 from cabrita.abc.base import InspectTemplate
-from typing import Union
 
 ARROW_UP = u"↑"
 ARROW_DOWN = u"↓"
 
+OUT = u"⭧"
+IN = u"⭨"
 
-class Direction(Enum):
+
+class GitDirection(Enum):
     ahead = 1
-    behind = 1
+    behind = 2
+
+
+class PortDirection(Enum):
+    external = 1
+    internal = 2
+    both = 3
 
 
 class DockerInspect(InspectTemplate):
 
+    def __init__(self, ports: PortDirection) -> None:
+        self.show_ports = ports
+
     def inspect(self, service: str) -> str:
         pass
 
+    def _get_service_name(self, service: str) -> str:
+        pass
 
-    def _get_inspect_data(self, service: str) -> Union[json, bool]:
+    def _get_service_ports(self, service: str) -> List[Optional[str]]:
+        return self.compose[service].get('ports', [])
+
+    def _get_container_name(self, service: str) -> str:
+        return self.compose[service].get('container_name', '')
+
+    def _get_inspect_data(self, service: str) -> dict:
         ret = self.run(
             'docker inspect {} 2>/dev/null'.format(service),
             get_stdout=True
         )
-        return json.loads(ret) if ret else False
+        return json.loads(ret) if ret else {}
+
+    def ports(self, service):
+        pass
 
 
 class GitInspect(InspectTemplate):
@@ -79,16 +103,16 @@ class GitInspect(InspectTemplate):
     def _get_modifications_in_target_branch(self, branch: str) -> Tuple[int, int]:
         if self.target_branch and \
                 branch != self.target_branch.replace("origin/", ""):
-            target_branch_ahead = self._get_commits_from_target(self.path, branch, Direction.ahead)
-            target_branch_behind = self._get_commits_from_target(self.path, branch, Direction.behind)
+            target_branch_ahead = self._get_commits_from_target(self.path, branch, GitDirection.ahead)
+            target_branch_behind = self._get_commits_from_target(self.path, branch, GitDirection.behind)
             self.modified = self.modified or target_branch_behind or target_branch_ahead
             return target_branch_ahead, target_branch_behind
         else:
             return 0, 0
 
     def _get_modifications_in_branch(self) -> Tuple[int, int]:
-        branch_ahead = self._get_commits(self.path, Direction.ahead)
-        branch_behind = self._get_commits(self.path, Direction.behind)
+        branch_ahead = self._get_commits(self.path, GitDirection.ahead)
+        branch_behind = self._get_commits(self.path, GitDirection.behind)
         self.modified = self.modified or branch_behind or branch_behind
         return branch_ahead, branch_behind
 
@@ -99,11 +123,11 @@ class GitInspect(InspectTemplate):
         )
         return branch.replace("* ", "").replace("\n", "") if branch else ""
 
-    def _get_commits(self, path, direction: Direction) -> int:
+    def _get_commits(self, path, direction: GitDirection) -> int:
 
         task = "cd {} && git status -bs --porcelain".format(path)
         ret = self.run(task, get_stdout=True)
-        if direction == Direction.behind:
+        if direction == GitDirection.behind:
             if "behind" in ret:
                 s = re.search(r"behind (\d+)", ret)
                 return int(s.group(1))
@@ -115,12 +139,12 @@ class GitInspect(InspectTemplate):
         else:
             return 0
 
-    def _get_commits_from_target(self, path: str, name: str, direction: Direction) -> int:
+    def _get_commits_from_target(self, path: str, name: str, direction: GitDirection) -> int:
 
         task = "cd {} && git log {}..{} --oneline 2>/dev/null".format(
             path,
-            name if direction == Direction.behind else self.target_branch,
-            self.target_branch if direction == Direction.behind else name
+            name if direction == GitDirection.behind else self.target_branch,
+            self.target_branch if direction == GitDirection.behind else name
         )
         ret = self.run(task, get_stdout=True)
         return 0 if not ret else len(ret.split("\n")) - 1
