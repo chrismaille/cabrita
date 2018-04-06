@@ -35,12 +35,8 @@ class Config(ConfigTemplate):
         return int(self.data['interval'])
 
     @property
-    def check_list(self) -> List[str]:
+    def watchers(self) -> List[str]:
         return self.data['check_list']
-
-    @property
-    def action_list(self) -> List[str]:
-        return self.data['action_list']
 
     @property
     def is_valid(self) -> bool:

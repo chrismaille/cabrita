@@ -15,6 +15,7 @@ IN = u"⭨"
 
 
 class PortDirection(Enum):
+    hidden = 0
     external = 1
     internal = 2
     both = 3

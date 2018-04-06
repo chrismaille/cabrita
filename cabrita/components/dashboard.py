@@ -23,9 +23,9 @@ class Dashboard:
     def __init__(self, layout: str) -> None:
         self.small_boxes = []
         self.large_boxes = []
-        self.box_check: Box = None
-        self.box_warnings: Box = None
-        self.box_stats: Box = None
+        self.compose_watch: Box = None
+        self.user_watches: Box = None
+        self.system_watch: Box = None
         self.layout = layout
 
     def run(self) -> None:
