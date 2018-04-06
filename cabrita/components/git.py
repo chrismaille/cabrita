@@ -17,7 +17,7 @@ class GitDirection(Enum):
 
 class GitInspect(InspectTemplate):
 
-    def __init__(self, compose, interval: int, target_branch: str):
+    def __init__(self, compose, interval: int, target_branch: str) -> None:
 
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
@@ -79,7 +79,7 @@ class GitInspect(InspectTemplate):
         self.modified = self.modified or branch_behind or branch_behind
         return branch_ahead, branch_behind
 
-    def _get_active_branch(self):
+    def _get_active_branch(self) -> str:
         branch = self.run(
             "cd {} && git branch | grep \"*\" 2>/dev/null".format(self.path),
             get_stdout=True

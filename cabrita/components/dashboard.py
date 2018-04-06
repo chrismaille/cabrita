@@ -1,9 +1,13 @@
 import os
 import sys
-from raven import Client
+
 from blessed import Terminal
 from dashing import dashing
-from buzio import console
+from dashing.dashing import HSplit, VSplit
+from raven import Client
+from typing import Union
+
+from cabrita.components.box import Box
 
 client = None
 if os.getenv('CABRITA_SENTRY_DSN'):
@@ -11,15 +15,20 @@ if os.getenv('CABRITA_SENTRY_DSN'):
 
 
 class Dashboard:
-    def __init__(self, layout: str):
+    """
+    Main dashboard class.
+
+    Initiate the main loop.
+    """
+    def __init__(self, layout: str) -> None:
         self.small_boxes = []
         self.large_boxes = []
-        self.box_check = None
-        self.box_warnings = None
-        self.box_stats = None
+        self.box_check: Box = None
+        self.box_warnings: Box = None
+        self.box_stats: Box = None
         self.layout = layout
 
-    def run(self):
+    def run(self) -> None:
         term = Terminal()
         try:
             with term.fullscreen():
@@ -31,23 +40,22 @@ class Dashboard:
             print(term.color(0))
             sys.exit(0)
         except BaseException as exc:
-            console.error("Internal Error: {}".format(exc))
             if client:
                 client.captureException()
-            sys.exit(1)
+            raise exc
 
-    def add_box(self, box):
+    def add_box(self, box: Box) -> None:
         box_list = self.small_boxes if box.size == 'small' else self.large_boxes
         box_list.insert(
             0 if box.main else len(box_list),
             box
         )
 
-    def _get_layout(self, term):
+    def _get_layout(self, term) -> Union[HSplit, VSplit]:
 
-        st = dashing.VSplit(
+        st = VSplit(
             self.box_check.widget,
-            dashing.VSplit(
+            VSplit(
                 self.box_warnings.widget,
                 self.box_stats.widget
             )
@@ -59,9 +67,9 @@ class Dashboard:
         sm = dashing.HSplit(*small_box_widgets, st) if small_box_widgets else st
 
         if self.layout == "horizontal":
-            func = dashing.HSplit
+            func = HSplit
         else:
-            func = dashing.VSplit
+            func = VSplit
 
         large_box_widgets = [
             b.widget

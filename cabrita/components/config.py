@@ -1,36 +1,49 @@
+from typing import List, Union, Optional
+
 from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
 
-class Config(ConfigTemplate):
 
+def _check_v1() -> bool:
+    """
+    TODO: Validate data from cabrita.yml files
+    :return:
+        bool
+    """
+    return True
+
+
+class Config(ConfigTemplate):
+    """
+    Cabrita Configuration main class.
+    """
 
     @property
-    def compose_files(self):
+    def compose_files(self) -> List[str]:
         return self.data['compose_files']
 
     @property
-    def layout(self):
+    def layout(self) -> str:
         return self.data['layout']
 
     @property
-    def boxes(self):
+    def boxes(self) -> List[dict]:
         return self.data['boxes']
 
     @property
-    def interval(self):
+    def interval(self) -> int:
         return int(self.data['interval'])
 
     @property
-    def check_list(self):
+    def check_list(self) -> List[str]:
         return self.data['check_list']
 
     @property
-    def action_list(self):
+    def action_list(self) -> List[str]:
         return self.data['action_list']
 
     @property
     def is_valid(self) -> bool:
-
         if not self.data:
             raise ValueError("Data must be loaded before validation")
 
@@ -47,44 +60,77 @@ class Config(ConfigTemplate):
         return getattr(self, "_check_v{}".format(self.version))
 
 
-    def _check_v1(self):
-
-        return True
-
-
 class Compose(ConfigTemplate):
+    """
+    Main class for Docker-Compose data.
+    """
 
     @property
-    def services(self):
+    def services(self) -> List[dict]:
         return self.data['services']
 
     @property
-    def volumes(self):
+    def volumes(self) -> List[str]:
         return self.data['volumes']
 
     @property
-    def networks(self):
+    def networks(self) -> List[str]:
         return self.data['networks']
 
     @property
     def is_valid(self) -> bool:
-
         if not self.data:
             raise ValueError("Data must be loaded before validation")
 
         return self._check()
 
-    def is_image(self, service_name):
+    def is_image(self, service_name: str) -> bool:
+        """
+        Check if service are built from image or dockerfile
+        :param service_name:
+            docker service name
+        :return:
+            bool
+        """
         return False if self.get_from_service(service_name, 'build') else True
 
     def get_build_path(self, service_name: str) -> str:
+        """
+        Get build full path for service
+
+        :param service_name:
+            docker service name
+        :return:
+            str
+        """
         data = self.get_from_service(service_name, 'build')
         path = data.get('context') if isinstance(data, dict) else data
         return get_path(path, self.base_path)
 
-    def get_from_service(self, service_name, key):
-        return self.services.get(service_name).get(key, '')
+    def get_from_service(self, service_name: str, key: str) -> Optional[Union[dict, str, List]]:
+        """
+        Get value from key for informed service.
 
-    def _check(self):
+        Example: get_from_service("flower", "ports") returns ["5555"]
 
+        :param service_name:
+            docker service name
+        :param key:
+            search key for service data
+        :return:
+            List, String, Dict or None
+        """
+        service = [
+            s
+            for s in self.services
+            if s == service_name
+        ][0]
+        return service.get(key, None)
+
+    def _check(self) -> bool:
+        """
+        TODO: Validate docker-compose yaml files.
+        :return:
+            bool
+        """
         return True

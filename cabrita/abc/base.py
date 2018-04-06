@@ -1,27 +1,29 @@
 import os
+from typing import Union
+
 import yaml
 import sys
 from abc import ABC, abstractmethod
 from cabrita.abc.utils import run_command
-from buzio import console, formatStr
+from buzio import console
 from datetime import datetime, timedelta
 
 from cabrita.abc.utils import get_path
 
 
 class ConfigTemplate(ABC):
-
-    def __init__(self):
-
+    """
+    Abstract class for processing yaml files.
+    """
+    def __init__(self) -> None:
         self.base_path = os.getcwd()
         self.list_path = []
-        self.full_path = None
+        self.full_path: str = None
         self.data = {}
         self.console = console
 
-
     @property
-    def version(self):
+    def version(self) -> str:
         return self.data['version']
 
     @property
@@ -29,11 +31,10 @@ class ConfigTemplate(ABC):
     def is_valid(self) -> bool:
         pass
 
-    def add_path(self, path):
+    def add_path(self, path: str) -> None:
         self.list_path.append(path)
 
-
-    def load_data(self):
+    def load_data(self) -> None:
         for path in self.list_path:
             try:
                 self.full_path = get_path(path, self.base_path)
@@ -53,20 +54,21 @@ class ConfigTemplate(ABC):
 
 
 class InspectTemplate(ABC):
-
-    def __init__(self, compose, interval: int):
-
+    """
+    Abstract class for docker service inspectors.
+    """
+    def __init__(self, compose: ConfigTemplate, interval: int) -> None:
         self.base_path = os.getcwd()
         self.run = run_command
         self.compose = compose
         self._status = {}
         self.interval = interval
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
-        self.path = None
-        self.default_data = None
+        self.path: str = None
+        self.default_data: Union[dict, str] = None
 
     @abstractmethod
-    def inspect(self, service: str):
+    def inspect(self, service: str) -> None:
         pass
 
     @property
@@ -74,8 +76,16 @@ class InspectTemplate(ABC):
         seconds_elapsed = (datetime.now() - self.last_update).total_seconds()
         return seconds_elapsed >= self.interval
 
-    def status(self, service):
+    def status(self, service) -> Union[dict, str]:
+        """
+        Return service status.
+        If can update, start fetching new data calling self.inspect method.
+
+        :param service:
+            docker service name
+        :return:
+            dict or string. If not fetch data yet send default data.
+        """
         if self.can_update:
             self.inspect(service)
         return self._status[service] if self._status.get(service) else self.default_data
-

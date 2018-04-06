@@ -5,17 +5,19 @@ from dashing import dashing
 from tabulate import tabulate
 from buzio import formatStr
 
+from cabrita.components.config import Compose
 from cabrita.components.docker import DockerInspect
 from cabrita.components.git import GitInspect
 
 
 class Box:
 
-    def __init__(self, services: List[str], docker: DockerInspect, git: GitInspect):
+    def __init__(self, services: List[str], compose: Compose, docker: DockerInspect, git: GitInspect) -> None:
         super(Box, self).__init__()
+        self.compose = compose
         self._widget = ""
         self.last_update = datetime.now()
-        self.interval = 0
+        self.interval: int = 0
         self.data = {}
         self.services = services
         self.docker = docker
@@ -27,13 +29,13 @@ class Box:
         return seconds_elapsed >= self.interval
 
     @property
-    def widget(self):
+    def widget(self) -> str:
         if self.can_update:
             self.run()
         return self._widget
 
     @widget.setter
-    def widget(self, value):
+    def widget(self, value) -> None:
         self._widget = value
 
     @property
@@ -52,10 +54,18 @@ class Box:
     def title(self) -> str:
         return self.data.get('title', 'Box')
 
-    def load_data(self, data: dict):
+    @property
+    def size(self) -> str:
+        return self.data.get('size', 'large')
+
+    @property
+    def main(self) -> bool:
+        return bool(self.data.get('main', False))
+
+    def load_data(self, data: dict) -> None:
         self.data = data
 
-    def run(self):
+    def run(self) -> None:
         # Define Headers
         table_header = ['Service', 'Status']
         if self.show_git:
@@ -68,9 +78,13 @@ class Box:
         # Generating lines
         table_lines = []
         for service in self.services:
-            service_data = self.docker.status(service, self.show_port)
+            service_data = self.docker.status(service)
+            if self.show_port == 'name':
+                service_name = f'{service_data["name"]} ({service_data["ports"]})'
+            else:
+                service_name = service_data['name']
             table_data = [
-                _format_color(service_data['name'], service_data['format']),
+                _format_color(service_name, service_data['format']),
                 _format_color(service_data['status'], service_data['format'])
             ]
             if self.show_git:
@@ -91,12 +105,12 @@ class Box:
             if service in s and category in s
         ]
         if service_to_find:
-            service_data = self.docker.status(s[0], self.show_port)
+            service_data = self.docker.status(service_to_find[0])
             return service_data['status']
         else:
             return "--"
 
 
-def _format_color(field, format):
-    func = getattr(formatStr, format)
+def _format_color(field: str, string_format: str) -> str:
+    func = getattr(formatStr, string_format)
     return func(field, use_prefix=False)

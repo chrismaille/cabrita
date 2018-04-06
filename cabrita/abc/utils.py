@@ -1,11 +1,13 @@
 import os
 import re
 import subprocess
+from typing import Union
+
 
 def run_command(
         task,
         get_stdout=False,
-        run_stdout=False):
+        run_stdout=False) -> Union[str, bool, KeyboardInterrupt]:
     """Run subprocess command.
 
     Args:
@@ -44,16 +46,16 @@ def run_command(
     return True if not get_stdout else ret.decode('utf-8')
 
 
-def get_path(path, base_path):
+def get_path(path: str, base_path: str) -> Union[str, ValueError]:
     """Return real path from string.
 
     Converts environment variables to path
     Converts relative path to full path
     """
     if "$" in path:
-        s = re.search("\${(\w+)}", path)
+        s = re.search(r"\${(\w+)}", path)
         if not s:
-            s = re.search("(\$\w+)", path)
+            s = re.search(r"(\$\w+)", path)
         if s:
             env = s.group(1).replace("$", "")
             name = os.environ.get(env)

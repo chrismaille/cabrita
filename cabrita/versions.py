@@ -2,14 +2,18 @@
 
 Checks version number for upgrades in PyPI
 """
+from typing import Optional, List
+
 import requests
 import sys
 from buzio import console
 from pkg_resources import parse_version
+from requests import RequestException
+
 from cabrita import __version__
 
 
-def versions():
+def versions() -> Optional[List[str]]:
     """Function: versions.
 
     Summary: Request all versions registered in PyPI
@@ -17,20 +21,19 @@ def versions():
     """
     console.info("Checking for updates...")
     url = "https://pypi.python.org/pypi/cabrita/json"
-    data = None
-    versions = None
+    versions_list = None
     try:
         ret = requests.get(url, timeout=1)
         data = ret.json()
-    except BaseException:
-        pass
+    except RequestException:
+        return None
     if data:
-        versions = list(data["releases"].keys())
-        versions.sort(key=parse_version)
-    return versions
+        versions_list = list(data["releases"].keys())
+        versions_list.sort(key=parse_version)
+    return versions_list
 
 
-def check_version():
+def check_version() -> None:
     """Function: check_version.
 
     Summary: Compares actual version vs last known

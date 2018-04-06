@@ -55,7 +55,7 @@ class DockerInspect(InspectTemplate):
 
     def _get_service_ports(self, service: str) -> str:
         service_string = []
-        port_list = self.compose.get_from_service(service, 'ports')
+        port_list = self.compose.get_from_service(service, 'ports') or ""
 
         if self.show_ports == PortDirection.external:
             for port in port_list:
