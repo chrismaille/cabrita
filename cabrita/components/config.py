@@ -83,7 +83,7 @@ class Compose(ConfigTemplate):
         return get_path(path, self.base_path)
 
     def get_from_service(self, service_name, key):
-        return self.services.get(service_name).get(key)
+        return self.services.get(service_name).get(key, '')
 
     def _check(self):
 

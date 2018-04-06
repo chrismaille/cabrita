@@ -1,15 +1,15 @@
 from datetime import datetime
-from threading import Thread
 from typing import List
 
 from dashing import dashing
 from tabulate import tabulate
 from buzio import formatStr
 
-from cabrita.components.inspect import GitInspect, DockerInspect
+from cabrita.components.docker import DockerInspect
+from cabrita.components.git import GitInspect
 
 
-class Box(Thread):
+class Box:
 
     def __init__(self, services: List[str], docker: DockerInspect, git: GitInspect):
         super(Box, self).__init__()
@@ -68,15 +68,15 @@ class Box(Thread):
         # Generating lines
         table_lines = []
         for service in self.services:
-            instance = self.docker.status(service)
+            service_data = self.docker.status(service, self.show_port)
             table_data = [
-                _format_color('name', instance),
-                _format_color('status', instance)
+                _format_color(service_data['name'], service_data['format']),
+                _format_color(service_data['status'], service_data['format'])
             ]
             if self.show_git:
                 table_data.append(self.git.status(service))
             if self.show_port == 'column':
-                table_data.append(self.docker.ports(service))
+                table_data.append(service_data['ports'])
             for category in self.categories:
                 table_data.append(self._get_service_category_data(service, category))
             table_lines.append(table_data)
@@ -85,9 +85,18 @@ class Box(Thread):
         self._widget = dashing.Text(table, color=6, border_color=5, title=self.title)
 
     def _get_service_category_data(self, service: str, category: str) -> str:
-        pass
+        service_to_find = [
+            s
+            for s in self.compose.services
+            if service in s and category in s
+        ]
+        if service_to_find:
+            service_data = self.docker.status(s[0], self.show_port)
+            return service_data['status']
+        else:
+            return "--"
 
 
-def _format_color(field, instance):
-    func = getattr(instance.format, formatStr)
-    return func(getattr(field, instance), use_prefix=False)
+def _format_color(field, format):
+    func = getattr(formatStr, format)
+    return func(field, use_prefix=False)

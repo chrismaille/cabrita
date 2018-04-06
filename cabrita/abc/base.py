@@ -59,11 +59,11 @@ class InspectTemplate(ABC):
         self.base_path = os.getcwd()
         self.run = run_command
         self.compose = compose
-        self._status = formatStr.info("Fetching...", theme="dark", use_prefix=False)
+        self._status = {}
         self.interval = interval
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
         self.path = None
-
+        self.default_data = None
 
     @abstractmethod
     def inspect(self, service: str):
@@ -76,10 +76,6 @@ class InspectTemplate(ABC):
 
     def status(self, service):
         if self.can_update:
-            self.inspect_all()
-        return self._status[service]
+            self.inspect(service)
+        return self._status[service] if self._status.get(service) else self.default_data
 
-    def inspect_all(self):
-        for service in self.compose.services:
-            self._status[service] = self.inspect(service)
-        self.last_update = datetime.now()

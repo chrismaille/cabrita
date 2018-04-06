@@ -52,14 +52,23 @@ class Dashboard:
                 self.box_stats.widget
             )
         )
-        sm = dashing.HSplit(*self.small_boxes, st) if self.small_boxes else st
+        small_box_widgets = [
+            b.widget
+            for b in self.small_boxes
+        ]
+        sm = dashing.HSplit(*small_box_widgets, st) if small_box_widgets else st
 
         if self.layout == "horizontal":
             func = dashing.HSplit
         else:
             func = dashing.VSplit
-        if self.large_boxes:
-            ui = func(*self.large_boxes, sm, terminal=term, main=True)
+
+        large_box_widgets = [
+            b.widget
+            for b in self.large_boxes
+        ]
+        if large_box_widgets:
+            ui = func(*large_box_widgets, sm, terminal=term, main=True)
         else:
             ui = func(sm, terminal=term, main=True)
 

@@ -1,7 +1,6 @@
-import json
 import re
 from enum import Enum
-from typing import Tuple, List, Optional
+from typing import Tuple
 
 from buzio import formatStr
 
@@ -10,47 +9,10 @@ from cabrita.abc.base import InspectTemplate
 ARROW_UP = u"↑"
 ARROW_DOWN = u"↓"
 
-OUT = u"⭧"
-IN = u"⭨"
-
 
 class GitDirection(Enum):
     ahead = 1
     behind = 2
-
-
-class PortDirection(Enum):
-    external = 1
-    internal = 2
-    both = 3
-
-
-class DockerInspect(InspectTemplate):
-
-    def __init__(self, ports: PortDirection) -> None:
-        self.show_ports = ports
-
-    def inspect(self, service: str) -> str:
-        pass
-
-    def _get_service_name(self, service: str) -> str:
-        pass
-
-    def _get_service_ports(self, service: str) -> List[Optional[str]]:
-        return self.compose[service].get('ports', [])
-
-    def _get_container_name(self, service: str) -> str:
-        return self.compose[service].get('container_name', '')
-
-    def _get_inspect_data(self, service: str) -> dict:
-        ret = self.run(
-            'docker inspect {} 2>/dev/null'.format(service),
-            get_stdout=True
-        )
-        return json.loads(ret) if ret else {}
-
-    def ports(self, service):
-        pass
 
 
 class GitInspect(InspectTemplate):
@@ -60,6 +22,7 @@ class GitInspect(InspectTemplate):
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
         self.modified = False
+        self.default_data = "Fetching..."
 
     def inspect(self, service: str) -> str:
         self.modified = False
@@ -92,10 +55,10 @@ class GitInspect(InspectTemplate):
                     formatStr.error(" {}{}".format(ARROW_UP, target_branch_ahead),
                                     use_prefix=False) if target_branch_ahead else ""
                 )
-            return formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,
-                                                                                                     use_prefix=False)
+            self._status = formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,
+                                                                                                             use_prefix=False)
         else:
-            return formatStr.warning(
+            self._status = formatStr.warning(
                 "Branch Not Found",
                 use_prefix=False
             )
