@@ -10,10 +10,8 @@ class DashboardCommand:
     compose: Compose
     config: Config
 
-    def __int__(self, path: str) -> None:
+    def add_config(self, path: str) -> None:
         self.cabrita_path = path
-
-    def add_config(self) -> None:
         self.config = Config()
         self.config.add_path(self.cabrita_path)
         self.config.load_data()
@@ -32,7 +30,10 @@ class DashboardCommand:
             self.dashboard.user_watches.add_watch(watch)
 
     def _add_boxes(self):
+        included_services = []
+        main_box = None
         for box_data in self.config.boxes:
+            included_services.append(box_data.get('includes'), [])
             docker = DockerInspect(
                 ports=box_data.get('show_ports', PortDirection.hidden),
                 files_to_watch=box_data.get('files_to_watch', []),
@@ -43,14 +44,25 @@ class DashboardCommand:
                 interval=box_data.get('git_fetch_interval', 30),
                 compose=self.compose
             )
-            box = Box(
-                compose=self.compose,
-                docker=docker,
-                git=git
-            )
-            self.dashboard.add_box(box)
+
+            box = Box()
+            box.compose = self.compose
+            box.docker = docker
+            box.git = git
+            box.services = box_data.get('includes', [])
+            box.load_data(box_data)
+
+            if box.main:
+                main_box = box
+            else:
+                self.dashboard.add_box(box)
+        for service in self.compose.services:
+            if service not in included_services and service not in self.config.get('ignore', []):
+                main_box.add_service(service)
+        self.dashboard.add_box(main_box)
 
     def execute(self):
         self.dashboard = Dashboard(self.config.layout)
         self._add_watchers()
         self._add_boxes()
+        self.dashboard.run()

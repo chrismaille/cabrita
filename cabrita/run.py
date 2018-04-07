@@ -1,7 +1,11 @@
 """Cabrita main module."""
+import sys
+
 import click
 from cabrita import __version__
 from buzio import console
+
+from cabrita.command import DashboardCommand
 from cabrita.versions import check_version
 
 
@@ -22,6 +26,14 @@ def run(path):
     console.box("Cabrita v{}".format(__version__))
     check_version()
     console.info("Loading Configuration...")
+    dashboard = DashboardCommand()
+    dashboard.add_config(path)
+    dashboard.add_compose()
+    if dashboard.config.is_valid and dashboard.compose.is_valid:
+        console.success('Configuration complete. Starting dashboard...')
+        dashboard.execute()
+    else:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

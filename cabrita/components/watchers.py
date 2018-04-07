@@ -47,8 +47,9 @@ from cabrita.components.box import Box
 
 
 class Watch(Box):
-    def __init__(self, actions: List[str]) -> None:
-        self.actions = actions
+
+    def run(self):
+        pass
 
 
 class DockerComposeWatch(Watch):

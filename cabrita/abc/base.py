@@ -41,7 +41,7 @@ class ConfigTemplate(ABC):
                 self.console.info("Reading {}".format(path))
                 with open(self.full_path, 'r') as file:
                     data_from_file = yaml.load(file.read())
-                    self.data = self.data.update(data_from_file)
+                    self.data.update(data_from_file)
             except IOError as exc:
                 console.error("Cannot open file: {}".format(exc))
                 sys.exit(1)

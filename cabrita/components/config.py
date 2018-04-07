@@ -4,7 +4,7 @@ from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
 
 
-def _check_v1() -> bool:
+def _check_v3() -> bool:
     """
     TODO: Validate data from cabrita.yml files
     :return:
@@ -54,6 +54,21 @@ class Config(ConfigTemplate):
             return False
 
         return getattr(self, "_check_v{}".format(self.version))
+
+    def _check_v1(self) -> bool:
+        return self._check_v2()
+
+    def _check_v2(self) -> bool:
+        self.console.error('This version is deprecated.  Please update to version 3.')
+        return False
+
+    def _check_v3(self) -> bool:
+        """
+        TODO: Validate data from cabrita.yml version 3 files
+        :return:
+            bool
+        """
+        return True
 
 
 class Compose(ConfigTemplate):

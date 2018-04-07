@@ -1,4 +1,5 @@
 from datetime import datetime
+from threading import Thread
 from typing import List
 
 from dashing import dashing
@@ -10,18 +11,17 @@ from cabrita.components.docker import DockerInspect
 from cabrita.components.git import GitInspect
 
 
-class Box:
+class Box(Thread):
 
-    def __init__(self, services: List[str], compose: Compose, docker: DockerInspect, git: GitInspect) -> None:
+    git: GitInspect = None
+    compose: Compose = None
+    docker: DockerInspect = None
+
+    def __init__(self) -> None:
         super(Box, self).__init__()
-        self.compose = compose
         self._widget = ""
         self.last_update = datetime.now()
-        self.interval: int = 0
         self.data = {}
-        self.services = services
-        self.docker = docker
-        self.git = git
 
     @property
     def can_update(self) -> bool:
@@ -37,6 +37,19 @@ class Box:
     @widget.setter
     def widget(self, value) -> None:
         self._widget = value
+
+
+    @property
+    def services(self):
+        return sorted(set(self._services))
+
+    @services.setter
+    def services(self, value):
+        self._services = value
+
+    @property
+    def interval(self):
+        return int(self.data.get('interval', 0))
 
     @property
     def show_git(self) -> bool:
@@ -64,6 +77,9 @@ class Box:
 
     def load_data(self, data: dict) -> None:
         self.data = data
+
+    def add_service(self, service):
+        self.services.append(service)
 
     def run(self) -> None:
         # Define Headers
