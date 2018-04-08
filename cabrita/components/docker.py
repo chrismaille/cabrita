@@ -9,6 +9,7 @@ from tzlocal import get_localzone
 
 from cabrita.abc.base import InspectTemplate
 from cabrita.abc.utils import get_path
+from cabrita.components.config import Compose
 
 OUT = u"⭧"
 IN = u"⭨"
@@ -23,8 +24,8 @@ class PortDirection(Enum):
 
 class DockerInspect(InspectTemplate):
 
-    def __init__(self, ports: PortDirection, files_to_watch: List[str], services_to_check_git: List[str]) -> None:
-        super(DockerInspect, self).__init__()
+    def __init__(self, compose: Compose, interval: int, ports: PortDirection, files_to_watch: List[str], services_to_check_git: List[str]) -> None:
+        super(DockerInspect, self).__init__(compose, interval)
         self.show_ports = ports
         self.files_to_watch = files_to_watch
         self.services_to_check_git = services_to_check_git

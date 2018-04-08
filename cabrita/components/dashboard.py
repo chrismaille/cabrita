@@ -54,10 +54,10 @@ class Dashboard:
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
 
         st = VSplit(
-            self.box_check.widget,
+            self.user_watches.widget,
             VSplit(
-                self.box_warnings.widget,
-                self.box_stats.widget
+                self.compose_watch.widget,
+                self.system_watch.widget
             )
         )
         small_box_widgets = [

@@ -32,12 +32,15 @@ class DashboardCommand:
     def _add_boxes(self):
         included_services = []
         main_box = None
-        for box_data in self.config.boxes:
-            included_services.append(box_data.get('includes'), [])
+        for name in self.config.boxes:
+            box_data = self.config.boxes[name]
+            included_services += box_data.get('includes', [])
             docker = DockerInspect(
                 ports=box_data.get('show_ports', PortDirection.hidden),
-                files_to_watch=box_data.get('files_to_watch', []),
-                services_to_check_git=box_data.get('services_to_check_git', []),
+                files_to_watch=box_data.get('watch_build_files', []),
+                services_to_check_git=box_data.get('watch_git_services', []),
+                compose=self.compose,
+                interval=box_data.get('interval', 0)
             )
             git = GitInspect(
                 target_branch=box_data.get('target_branch', ""),
@@ -57,7 +60,7 @@ class DashboardCommand:
             else:
                 self.dashboard.add_box(box)
         for service in self.compose.services:
-            if service not in included_services and service not in self.config.get('ignore', []):
+            if service not in included_services and service not in self.config.ignore_services:
                 main_box.add_service(service)
         self.dashboard.add_box(main_box)
 

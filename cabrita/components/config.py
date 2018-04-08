@@ -19,6 +19,10 @@ class Config(ConfigTemplate):
     """
 
     @property
+    def ignore_services(self):
+        return self.data.get('ignore_services', [])
+
+    @property
     def compose_files(self) -> List[str]:
         return self.data['compose_files']
 
@@ -36,7 +40,7 @@ class Config(ConfigTemplate):
 
     @property
     def watchers(self) -> List[str]:
-        return self.data['check_list']
+        return self.data.get('watchers', [])
 
     @property
     def is_valid(self) -> bool:
@@ -59,7 +63,7 @@ class Config(ConfigTemplate):
         return self._check_v2()
 
     def _check_v2(self) -> bool:
-        self.console.error('This version is deprecated.  Please update to version 3.')
+        self.console.warning('This version is deprecated.  Please update to version 3.')
         return False
 
     def _check_v3(self) -> bool:
