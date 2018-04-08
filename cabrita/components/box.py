@@ -30,8 +30,6 @@ class Box(Thread):
 
     @property
     def widget(self) -> str:
-        if self.can_update:
-            self.run()
         return self._widget
 
     @widget.setter

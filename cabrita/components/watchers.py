@@ -43,6 +43,8 @@
 #     return gui.Text(text, border_color=5, title="Check Status")
 from typing import List
 
+from dashing import dashing
+
 from cabrita.components.box import Box
 
 
@@ -53,11 +55,11 @@ class Watch(Box):
 
 
 class DockerComposeWatch(Watch):
-    widget = "Docker-Compose Watcher"
+    widget = dashing.Text("Hello World", color=6, border_color=5, title="Docker-Compose")
 
 
 class UserWatch(Watch):
-    widget = "Hello World User Watchers"
+    widget = dashing.Text("Hello World", color=6, border_color=5, title="Watchs")
     _watchers: List[str] = []
 
     def add_watch(self, watch: str) -> None:
@@ -65,4 +67,4 @@ class UserWatch(Watch):
 
 
 class SystemWatch(Watch):
-    widget = "System Watcher"
+    widget = dashing.Text("Hello World", color=6, border_color=5, title="System")

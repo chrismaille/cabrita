@@ -60,7 +60,7 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
             env = s.group(1).replace("$", "")
             name = os.environ.get(env)
             if not name:
-                raise ValueError(f"Can't find value for {name} environment key")
+                raise ValueError("Can't find value for {}".format(env))
             path_list = [
                 part if "$" not in part else name
                 for part in path.split("/")

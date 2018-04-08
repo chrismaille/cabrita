@@ -88,4 +88,7 @@ class InspectTemplate(ABC):
         """
         if self.can_update:
             self.inspect(service)
-        return self._status[service] if self._status.get(service) else self.default_data
+        if not self._status:
+            return self.default_data
+
+        return self._status[service] if isinstance(self._status, dict) else self._status

@@ -60,11 +60,11 @@ class Config(ConfigTemplate):
         return getattr(self, "_check_v{}".format(self.version))
 
     def _check_v1(self) -> bool:
-        return self._check_v2()
+        raise DeprecationWarning("Wrong version. Please update to version 3.")
 
     def _check_v2(self) -> bool:
         self.console.warning('This version is deprecated.  Please update to version 3.')
-        return False
+        return True
 
     def _check_v3(self) -> bool:
         """
@@ -136,9 +136,9 @@ class Compose(ConfigTemplate):
             List, String, Dict or None
         """
         service = [
-            s
+            self.data['services'][s]
             for s in self.services
-            if s == service_name
+            if service_name.lower() in s
         ][0]
         return service.get(key, None)
 
