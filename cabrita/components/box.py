@@ -11,7 +11,7 @@ from cabrita.components.docker import DockerInspect
 from cabrita.components.git import GitInspect
 
 
-class Box(Thread):
+class Box():
 
     git: GitInspect = None
     compose: Compose = None
@@ -30,6 +30,8 @@ class Box(Thread):
 
     @property
     def widget(self) -> str:
+        if self.can_update:
+            self.run()
         return self._widget
 
     @widget.setter
@@ -63,7 +65,7 @@ class Box(Thread):
 
     @property
     def title(self) -> str:
-        return self.data.get('title', 'Box')
+        return self.data.get('name', 'Box')
 
     @property
     def size(self) -> str:
@@ -73,11 +75,15 @@ class Box(Thread):
     def main(self) -> bool:
         return bool(self.data.get('main', False))
 
+    @property
+    def includes(self):
+        return self.data.get('includes', [])
+
     def load_data(self, data: dict) -> None:
         self.data = data
 
     def add_service(self, service):
-        self.services.append(service)
+        self._services.append(service)
 
     def run(self) -> None:
         # Define Headers
@@ -91,22 +97,35 @@ class Box(Thread):
 
         # Generating lines
         table_lines = []
-        for service in self.services:
+        main_category = None
+        striped_name = None
+        if self.includes and self.categories:
+            main_category = self.includes[0].lower()
+            services_in_line = [
+                service
+                for service in self.services
+                if main_category in service
+            ]
+        else:
+            services_in_line = self.services
+        for service in services_in_line:
+            if main_category:
+                striped_name = service.replace(main_category, "").replace("-", "").replace("_", "")
             service_data = self.docker.status(service)
             if self.show_port == 'name':
                 service_name = f'{service_data["name"]} ({service_data["ports"]})'
             else:
                 service_name = service_data['name']
             table_data = [
-                _format_color(service_name, service_data['format']),
-                _format_color(service_data['status'], service_data['format'])
+                _format_color(service_name, service_data['style'], service_data['theme']),
+                _format_color(service_data['status'], service_data['style'], service_data['theme'])
             ]
             if self.show_git:
                 table_data.append(self.git.status(service))
             if self.show_port == 'column':
                 table_data.append(service_data['ports'])
             for category in self.categories:
-                table_data.append(self._get_service_category_data(service, category))
+                table_data.append(self._get_service_category_data(striped_name, category))
             table_lines.append(table_data)
 
         table = tabulate(table_lines, table_header)
@@ -116,7 +135,7 @@ class Box(Thread):
         service_to_find = [
             s
             for s in self.compose.services
-            if service in s and category in s
+            if service.lower() in s and category.lower() in s
         ]
         if service_to_find:
             service_data = self.docker.status(service_to_find[0])
@@ -125,6 +144,6 @@ class Box(Thread):
             return "--"
 
 
-def _format_color(field: str, string_format: str) -> str:
-    func = getattr(formatStr, string_format)
-    return func(field, use_prefix=False)
+def _format_color(text: str, style: str, theme: str) -> str:
+    func = getattr(formatStr, style)
+    return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)

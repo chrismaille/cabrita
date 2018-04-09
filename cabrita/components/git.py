@@ -22,7 +22,7 @@ class GitInspect(InspectTemplate):
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
         self.modified = False
-        self.default_data = "Fetching..."
+        self.default_data = "--"
 
     def inspect(self, service: str) -> str:
         self.modified = False
@@ -48,17 +48,17 @@ class GitInspect(InspectTemplate):
                 formatStr.error(" {}{}".format(ARROW_UP, branch_ahead), use_prefix=False) if branch_ahead else ""
             )
             if target_branch_ahead or target_branch_behind:
-                text += "({}{}{})".format(
+                text += " ({}{}{})".format(
                     self.target_branch,
                     formatStr.error(" {}{}".format(ARROW_DOWN, target_branch_behind),
                                     use_prefix=False) if target_branch_behind else "",
                     formatStr.error(" {}{}".format(ARROW_UP, target_branch_ahead),
                                     use_prefix=False) if target_branch_ahead else ""
                 )
-            self._status = formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,
+            self._status[service] = formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,
                                                                                                              use_prefix=False)
         else:
-            self._status = formatStr.warning(
+            self._status[service] = formatStr.error(
                 "Branch Not Found",
                 use_prefix=False
             )
@@ -68,7 +68,6 @@ class GitInspect(InspectTemplate):
                 branch != self.target_branch.replace("origin/", ""):
             target_branch_ahead = self._get_commits_from_target(self.path, branch, GitDirection.ahead)
             target_branch_behind = self._get_commits_from_target(self.path, branch, GitDirection.behind)
-            self.modified = self.modified or target_branch_behind or target_branch_ahead
             return target_branch_ahead, target_branch_behind
         else:
             return 0, 0
@@ -76,7 +75,6 @@ class GitInspect(InspectTemplate):
     def _get_modifications_in_branch(self) -> Tuple[int, int]:
         branch_ahead = self._get_commits(self.path, GitDirection.ahead)
         branch_behind = self._get_commits(self.path, GitDirection.behind)
-        self.modified = self.modified or branch_behind or branch_behind
         return branch_ahead, branch_behind
 
     def _get_active_branch(self) -> str:

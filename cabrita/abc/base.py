@@ -38,7 +38,7 @@ class ConfigTemplate(ABC):
         for path in self.list_path:
             try:
                 self.full_path = get_path(path, self.base_path)
-                self.console.info("Reading {}".format(path))
+                self.console.info("Reading {}".format(self.full_path))
                 with open(self.full_path, 'r') as file:
                     data_from_file = yaml.load(file.read())
                     self.data.update(data_from_file)
@@ -88,7 +88,5 @@ class InspectTemplate(ABC):
         """
         if self.can_update:
             self.inspect(service)
-        if not self._status:
-            return self.default_data
 
-        return self._status[service] if isinstance(self._status, dict) else self._status
+        return self._status.get(service, self.default_data)

@@ -23,6 +23,7 @@ def run(path):
     2. Import configuration file
     3. Run dashboard.
     """
+    print("")
     console.box("Cabrita v{}".format(__version__))
     check_version()
     console.info("Loading Configuration...")

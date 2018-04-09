@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 import time
 from enum import Enum
 from typing import List, Tuple
@@ -41,17 +42,20 @@ class DockerInspect(InspectTemplate):
         inspect_data = self._get_inspect_data(container_name)
         if not inspect_data:
             service_status = "Not Found"
-            string_format = "info"
+            text_style = "info"
+            text_theme = "dark"
         elif self._need_build(service, inspect_data):
             service_status = "NEED BUILD"
-            string_format = "error"
+            text_style = "error"
+            text_theme = None
         else:
-            service_status, string_format = self._define_status(inspect_data)
+            service_status, text_style, text_theme = self._define_status(inspect_data)
 
         self._status[service] = {
             "name": service,
             "status": service_status,
-            "format": string_format,
+            "style": text_style,
+            "theme": text_theme,
             "ports": self._get_service_ports(service)
         }
 
@@ -92,7 +96,8 @@ class DockerInspect(InspectTemplate):
         name = self.compose.get_from_service(service, 'container_name')
         if not name:
             # Generate default_name
-            name = os.path.basename(self.compose.full_path)
+            name = os.path.basename(os.path.dirname(self.compose.full_path))
+            name = re.sub(r'[^A-Za-z0-9]+', '', name)
             name = f"{name}_{service}_1"
         return name
 
@@ -103,7 +108,8 @@ class DockerInspect(InspectTemplate):
         )
         return json.loads(ret)[0] if ret else {}
 
-    def _define_status(self, inspect_data) -> Tuple[str, str]:
+    def _define_status(self, inspect_data) -> Tuple[str, str, str]:
+        theme = None
         if inspect_data['State'].get('Health', False):
             if inspect_data['State']['Status'].lower() == 'running':
                 stats = inspect_data['State']['Health']['Status'].title()
@@ -111,29 +117,31 @@ class DockerInspect(InspectTemplate):
                 stats = inspect_data['State']['Status'].title()
             if inspect_data['State']['Running']:
                 if inspect_data['State']['Health']['Status'] == 'healthy':
-                    theme = "success"
+                    style = "success"
                 else:
                     if inspect_data['State']['Health']['FailingStreak'] > 3:
-                        theme = "error"
+                        style = "error"
                     else:
-                        theme = "warning"
+                        style = "warning"
             elif inspect_data['State']['Paused']:
-                theme = "warning"
+                style = "warning"
             elif not inspect_data['State']['Running']:
+                style = "info"
                 theme = "dark"
             else:
-                theme = "error"
+                style = "error"
         else:
             stats = inspect_data['State']['Status'].title()
             if inspect_data['State']['Running']:
-                theme = "success"
+                style = "success"
             elif inspect_data['State']['Paused']:
-                theme = "warning"
+                style = "warning"
             elif not inspect_data['State']['Running']:
+                style = "info"
                 theme = "dark"
             else:
-                theme = "error"
-        return stats, theme
+                style = "error"
+        return stats, style, theme
 
     def _need_build(self, service: str, inspect_data: dict) -> bool:
         test_date = None

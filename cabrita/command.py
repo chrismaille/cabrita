@@ -29,12 +29,11 @@ class DashboardCommand:
         for watch in self.config.watchers:
             self.dashboard.user_watches.add_watch(watch)
 
-    def _add_boxes(self):
+    def _add_services_in_boxes(self):
         included_services = []
         main_box = None
         for name in self.config.boxes:
             box_data = self.config.boxes[name]
-            included_services += box_data.get('includes', [])
             docker = DockerInspect(
                 ports=box_data.get('show_ports', PortDirection.hidden),
                 files_to_watch=box_data.get('watch_build_files', []),
@@ -48,11 +47,19 @@ class DashboardCommand:
                 compose=self.compose
             )
 
+            services_in_box = []
+            for service in self.compose.services:
+                if service not in included_services and service not in self.config.ignore_services:
+                    for name in box_data.get('includes', []):
+                        if name.lower() in service.lower():
+                            services_in_box.append(service)
+                            included_services.append(service)
+
             box = Box()
             box.compose = self.compose
             box.docker = docker
             box.git = git
-            box.services = box_data.get('includes', [])
+            box.services = services_in_box
             box.load_data(box_data)
 
             if box.main:
@@ -67,5 +74,5 @@ class DashboardCommand:
     def execute(self):
         self.dashboard = Dashboard(self.config.layout)
         self._add_watchers()
-        self._add_boxes()
+        self._add_services_in_boxes()
         self.dashboard.run()
