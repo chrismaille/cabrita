@@ -104,4 +104,4 @@ def get_check_status(dash):
         table_headers
     )
     return dashing.Text(final_text, color=6, border_color=5,
-                        title="Check Files")
+                        title="Check Files", background_color=0,)

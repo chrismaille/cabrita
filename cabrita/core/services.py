@@ -36,4 +36,4 @@ def get_check_services(dash):
         table_data,
         table_headers
     )
-    return dashing.Text(final_text, color=6, border_color=5, title="3rd Services Status")
+    return dashing.Text(final_text, color=6, border_color=5, title="3rd Services Status", background_color=0)

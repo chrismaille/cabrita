@@ -51,19 +51,22 @@ def get_info():
             val=cpu_percent,
             color=cpu_color,
             border_color=cpu_color,
-            title="CPU:{}%".format(cpu_percent)
+            title="CPU:{}%".format(cpu_percent),
+            background_color=0
         ),
         dashing.HGauge(
             val=memory_percent,
             color=memory_color,
             border_color=memory_color,
-            title="Free Mem:{}M".format(free_memory)
+            title="Free Mem:{}M".format(free_memory),
+            background_color=0
         ),
         dashing.HGauge(
             val=space_percent,
             color=space_color,
             border_color=space_color,
-            title="Free Space:{}Gb".format(free_space)
+            title="Free Space:{}Gb".format(free_space),
+            background_color=0,
         )
     )
     return widget

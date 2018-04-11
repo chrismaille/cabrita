@@ -224,7 +224,7 @@ class Dashboard():
             table_lines,
             table_header
         )
-        return dashing.Text(text, color=6, border_color=5, title=box_name)
+        return dashing.Text(text, color=6, border_color=5, background_color=0, title=box_name)
 
     def get_service_name(self, key):
         """Return service name.
@@ -301,11 +301,13 @@ class Dashboard():
             check_status,
             dashing.VSplit(
                 check_services,
-                info
-            )
+                info,
+                background_color=0
+            ),
+            background_color=0
         )
         if small_boxes:
-            sm = dashing.HSplit(*small_boxes, st)
+            sm = dashing.HSplit(*small_boxes, st, background_color=0)
         else:
             sm = st
         if self.layout == "horizontal":
@@ -313,9 +315,9 @@ class Dashboard():
         else:
             func = dashing.VSplit
         if not lg:
-            ui = func(sm, terminal=term, main=True)
+            ui = func(sm, background_color=0, terminal=term, main=True)
         else:
-            ui = func(*lg, sm, terminal=term, main=True)
+            ui = func(*lg, sm, background_color=0, terminal=term, main=True)
 
         return ui
 
@@ -333,7 +335,8 @@ class Dashboard():
                 date_format=self.config['logging']['date_format'],
                 title="Log",
                 color=6,
-                border_color=5
+                border_color=5,
+                background_color=0
             )
             self.log.info("Cabrita has started.")
             self.log.info("Press CTRL-C to end.")
