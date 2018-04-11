@@ -13,8 +13,6 @@ from cabrita.components.git import GitInspect
 
 class Box:
 
-    _background_color: int
-
     def __init__(self, background_color: BoxColor = BoxColor.black, compose: Compose = None, git: GitInspect = None,
                  docker: DockerInspect = None) -> None:
         self._widget = ""
@@ -124,7 +122,7 @@ class Box:
         if self.port_detail != value:
             return self.service_data[value]
 
-        return f'{self.service_data[value]} ({self.service_data["ports"]})'
+        return "{} ({})".format(self.service_data[value], self.service_data["ports"])
 
     def run(self) -> None:
         # Define Headers
@@ -162,7 +160,8 @@ class Box:
                 table_data.append(self.git.get_git_revision(service))
 
             if self.port_view == PortView.column:
-                table_data.append("" if not self.service_data['ports'] else self._add_ports("ports"))
+                port_string = "" if not self.service_data['ports'] else self._add_ports("ports")
+                table_data.append(_format_color(port_string, self.service_data['style'], self.service_data['theme']))
 
             if self.show_git:
                 table_data.append(self.git.status(service))
@@ -176,7 +175,7 @@ class Box:
                                                     category_data['theme'])
                     if self.port_view == PortView.status and category_data['ports'] and category_data[
                         'status'].lower() not in ["exited", "error", "not found"]:
-                        category_status += f' {category_data["ports"]}'
+                        category_status += ' {}'.format(category_data["ports"])
                     table_data.append(category_status)
             table_lines.append(table_data)
 
@@ -212,7 +211,7 @@ class Box:
             tag = formatStr.info(tag, use_prefix=False)
             hash = line[2].split("@")[1] if "@" in line[2] else line[2]
             hash = formatStr.info(hash, use_prefix=False, theme="dark")
-            revision = f"{tag}{hash}"
+            revision = "{}{}".format(tag, hash)
             line = [
                 column if index != 2 else revision
                 for index, column in enumerate(line)

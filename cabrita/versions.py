@@ -60,5 +60,5 @@ def check_version() -> None:
                 console.error("\nThere is a error during upgrade. Please try again.")
             sys.exit(0)
         else:
-            return formatStr.error(f'{last_version} (update available)', use_prefix=False)
+            return formatStr.error('{} (update available)'.format(last_version), use_prefix=False)
     return formatStr.success(last_version, use_prefix=False)

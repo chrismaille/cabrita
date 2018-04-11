@@ -80,20 +80,20 @@ class DockerInspect(InspectTemplate):
 
         for port in port_list:
             if ":" in port:
-                external_ports.append(f"{port.split(':')[0]}")
-                internal_ports.append(f"{port.split(':')[-1]}")
+                external_ports.append("{}".format(port.split(':')[0]))
+                internal_ports.append("{}".format(port.split(':')[-1]))
             else:
-                internal_ports.append(f"{port}")
+                internal_ports.append("{}".format(port))
 
         if internal_ports == external_ports:
-            return f'{BOTH} {" ".join(external_ports)}'
+            return '{} {}'.format(BOTH, " ".join(external_ports))
 
         if self.port_detail == PortDetail.external:
-            service_string = f'{OUT} {" ".join(external_ports)}'
+            service_string = '{} {}'.format(OUT, " ".join(external_ports))
         elif self.port_detail == PortDetail.internal:
-            service_string = f'{IN} {" ".join(internal_ports)}'
+            service_string = '{} {}'.format(IN, " ".join(internal_ports))
         else:
-            service_string = f'{OUT} {" ".join(external_ports)} {IN} {" ".join(internal_ports)}'
+            service_string = '{} {} {} {}'.format(OUT, " ".join(external_ports), IN, " ".join(internal_ports))
 
         return service_string
 
@@ -104,7 +104,7 @@ class DockerInspect(InspectTemplate):
             # Generate default_name
             name = os.path.basename(os.path.dirname(self.compose.full_path))
             name = re.sub(r'[^A-Za-z0-9]+', '', name)
-            name = f"{name}_{service}_1"
+            name = "{}_{}_1".format(name, service)
         return name
 
     def _get_inspect_data(self, service: str) -> dict:

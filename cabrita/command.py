@@ -10,8 +10,6 @@ from cabrita.components.watchers import DockerComposeWatch, SystemWatch, UserWat
 
 
 class DashboardCommand:
-    compose: Compose
-    config: Config
 
     def add_config(self, path: str) -> None:
         self.cabrita_path = path

@@ -18,7 +18,7 @@ class ConfigTemplate(ABC):
     def __init__(self) -> None:
         self.base_path = os.getcwd()
         self.list_path = []
-        self.full_path: str = None
+        self.full_path = None
         self.data = {}
         self.console = console
 
@@ -64,8 +64,8 @@ class InspectTemplate(ABC):
         self._status = {}
         self.interval = interval
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
-        self.path: str = None
-        self.default_data: Union[dict, str] = None
+        self.path = None
+        self.default_data = None
 
     @abstractmethod
     def inspect(self, service: str) -> None:

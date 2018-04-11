@@ -1,46 +1,3 @@
-# def get_check_status(self):
-#     """Check Docker-Compose and Ngrok status.
-#
-#     Returns
-#     -------
-#         obj: gui.Text
-#
-#     """
-#     # Check docker-compose.yml status
-#     ret = run_command(
-#         "cd {} && git fetch && git status -bs --porcelain".format(
-#             self.path),
-#         get_stdout=True
-#     )
-#     if not ret:
-#         text = formatStr.warning(
-#             "Can't find Docker-Compose status.\n",
-#             use_prefix=False)
-#     elif 'behind' in ret:
-#         text = formatStr.error(
-#             'Docker-Compose is OUTDATED.\n',
-#             use_prefix=False)
-#     else:
-#         text = formatStr.success(
-#             'Docker-Compose is up-to-date.\n',
-#             use_prefix=False)
-#     # Check Ngrok
-#     if self.check_ngrok:
-#         try:
-#             ret = requests.get(
-#                 "http://127.0.0.1:4040/api/tunnels", timeout=1)
-#             if ret.status_code == 200:
-#                 text += formatStr.success("Ngrok status: running",
-#                                           use_prefix=False)
-#             else:
-#                 text += formatStr.error("Ngrok status: ERROR",
-#                                         use_prefix=False)
-#         except KeyboardInterrupt:
-#             raise KeyboardInterrupt
-#         except BaseException:
-#             text += formatStr.error("Ngrok status: NOT RUNNING",
-#                                     use_prefix=False)
-#     return gui.Text(text, border_color=5, title="Check Status")
 import os
 import re
 from typing import List
@@ -76,15 +33,19 @@ class DockerComposeWatch(Box):
 
         table = tabulate(table_lines, [])
 
-        self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color, title="Docker-Compose")
+        self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color,
+                                    title="Docker-Compose")
 
 
 class UserWatch(Box):
 
-    _watchers: List[str] = []
+    def __init__(self, **kwargs):
+        super(UserWatch, self).__init__(**kwargs)
+        self._watchers = []
 
     def run(self):
-        self._widget = dashing.Text("Hello World", color=6, border_color=5, background_color=self.background_color, title="Watchers")
+        self._widget = dashing.Text("Hello World", color=6, border_color=5, background_color=self.background_color,
+                                    title="Watchers")
 
     def add_watch(self, watch: str) -> None:
         self._watchers.append(watch)
@@ -96,14 +57,15 @@ class SystemWatch(Box):
         self.version = kwargs.pop('version')
         super(SystemWatch, self).__init__(**kwargs)
 
-    def _get_docker_folder_size(self):
+    @staticmethod
+    def _get_docker_folder_size():
         multiple = {
             'B': 1,
             'KB': 1024,
             'MB': 1024 * 1024,
             'GB': 1024 * 1024 * 1024
         }
-        total_size: float = 0
+        total_size = 0.0
         docker_sizes = run_command(
             "docker system df --format '{{.Size}}'",
             get_stdout=True
@@ -207,5 +169,5 @@ class SystemWatch(Box):
                 title="Docker Space Used:{}Gb of {}Gb used".format(docker_usage, round(total_space - free_space, 1)),
                 background_color=self.background_color
             ),
-            title=f"Cabrita v. {self.version}"
+            title="Cabrita v. {}".format(self.version)
         )
