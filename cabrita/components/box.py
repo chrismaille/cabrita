@@ -1,27 +1,29 @@
 from datetime import datetime
-from threading import Thread
-from typing import List
+from typing import List, Optional
 
+from buzio import formatStr
 from dashing import dashing
 from tabulate import tabulate
-from buzio import formatStr
 
+from cabrita.components import BoxColor
 from cabrita.components.config import Compose
-from cabrita.components.docker import DockerInspect
+from cabrita.components.docker import DockerInspect, PortView, PortDetail
 from cabrita.components.git import GitInspect
 
 
-class Box():
+class Box:
 
-    git: GitInspect = None
-    compose: Compose = None
-    docker: DockerInspect = None
+    _background_color: int
 
-    def __init__(self) -> None:
-        super(Box, self).__init__()
+    def __init__(self, background_color: BoxColor = BoxColor.black, compose: Compose = None, git: GitInspect = None,
+                 docker: DockerInspect = None) -> None:
         self._widget = ""
         self.last_update = datetime.now()
         self.data = {}
+        self.compose = compose
+        self.git = git
+        self.docker = docker
+        self.background_color = background_color
 
     @property
     def can_update(self) -> bool:
@@ -37,7 +39,6 @@ class Box():
     @widget.setter
     def widget(self, value) -> None:
         self._widget = value
-
 
     @property
     def services(self):
@@ -56,8 +57,16 @@ class Box():
         return self.data.get('show_git', True)
 
     @property
-    def show_port(self) -> str:
-        return self.data.get('show_port', '')
+    def show_revision(self) -> bool:
+        return self.data.get('show_revision', False)
+
+    @property
+    def port_view(self) -> PortView:
+        return PortView(self.data.get('port_view', PortView.hidden))
+
+    @property
+    def port_detail(self) -> PortDetail:
+        return PortDetail(self.data.get('port_detail', PortDetail.external))
 
     @property
     def categories(self) -> List[str]:
@@ -79,23 +88,49 @@ class Box():
     def includes(self):
         return self.data.get('includes', [])
 
+    @property
+    def background_color(self):
+        return self._background_color
+    
+    @background_color.setter
+    def background_color(self, value: BoxColor):
+        self._background_color = value.value
+
     def load_data(self, data: dict) -> None:
         self.data = data
 
     def add_service(self, service):
         self._services.append(service)
 
-    def run(self) -> None:
-        # Define Headers
+    def _get_headers(self) -> List[str]:
         table_header = ['Service', 'Status']
+        if self.show_revision:
+            table_header += ['Revision']
+        if self.port_view == PortView.column:
+            table_header += ['Port']
         if self.show_git:
             table_header += ['Git']
-        if self.show_port == 'column':
-            table_header += ['Port']
         if self.categories:
             table_header += self.categories
+        return table_header
 
-        # Generating lines
+    def _add_ports(self, value) -> str:
+        if not self.service_data['ports']:
+            return self.service_data[value]
+
+        if self.service_data['status'].lower() in ["exited", "error", "not found", "need build"]:
+            return self.service_data[value] if value != "ports" else ""
+
+        if self.port_detail != value:
+            return self.service_data[value]
+
+        return f'{self.service_data[value]} ({self.service_data["ports"]})'
+
+    def run(self) -> None:
+        # Define Headers
+        table_header = self._get_headers()
+
+        # Get Services for Lines
         table_lines = []
         main_category = None
         striped_name = None
@@ -108,30 +143,50 @@ class Box():
             ]
         else:
             services_in_line = self.services
+
         for service in services_in_line:
             if main_category:
                 striped_name = service.replace(main_category, "").replace("-", "").replace("_", "")
-            service_data = self.docker.status(service)
-            if self.show_port == 'name':
-                service_name = f'{service_data["name"]} ({service_data["ports"]})'
-            else:
-                service_name = service_data['name']
+
+            self.service_data = self.docker.status(service)
+
+            service_name = self._add_ports("name")
+            service_status = self._add_ports("status")
+
             table_data = [
-                _format_color(service_name, service_data['style'], service_data['theme']),
-                _format_color(service_data['status'], service_data['style'], service_data['theme'])
+                _format_color(service_name, self.service_data['style'], self.service_data['theme']),
+                _format_color(service_status, self.service_data['style'], self.service_data['theme'])
             ]
+
+            if self.show_revision:
+                table_data.append(self.git.get_git_revision(service))
+
+            if self.port_view == PortView.column:
+                table_data.append("" if not self.service_data['ports'] else self._add_ports("ports"))
+
             if self.show_git:
                 table_data.append(self.git.status(service))
-            if self.show_port == 'column':
-                table_data.append(service_data['ports'])
+
             for category in self.categories:
-                table_data.append(self._get_service_category_data(striped_name, category))
+                category_data = self._get_service_category_data(striped_name, category)
+                if not category_data:
+                    table_data.append('--')
+                else:
+                    category_status = _format_color(category_data['status'], category_data['style'],
+                                                    category_data['theme'])
+                    if self.port_view == PortView.status and category_data['ports'] and category_data[
+                        'status'].lower() not in ["exited", "error", "not found"]:
+                        category_status += f' {category_data["ports"]}'
+                    table_data.append(category_status)
             table_lines.append(table_data)
 
+        if self.show_revision:
+            table_lines = self.format_revision(table_lines)
         table = tabulate(table_lines, table_header)
-        self._widget = dashing.Text(table, color=6, border_color=5, title=self.title)
+        self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color,
+                                    title=self.title)
 
-    def _get_service_category_data(self, service: str, category: str) -> str:
+    def _get_service_category_data(self, service: str, category: str) -> Optional[dict]:
         service_to_find = [
             s
             for s in self.compose.services
@@ -139,9 +194,32 @@ class Box():
         ]
         if service_to_find:
             service_data = self.docker.status(service_to_find[0])
-            return service_data['status']
+            return service_data
         else:
-            return "--"
+            return None
+
+    def format_revision(self, table_lines):
+
+        largest_tag = max([
+            len(line[2].split("@")[0] if "@" in line[2] else "")
+            for line in table_lines
+        ])
+
+        new_lines = []
+        for line in table_lines:
+            tag = line[2].split("@")[0] if "@" in line[2] else ""
+            tag = tag.ljust(largest_tag + 1)
+            tag = formatStr.info(tag, use_prefix=False)
+            hash = line[2].split("@")[1] if "@" in line[2] else line[2]
+            hash = formatStr.info(hash, use_prefix=False, theme="dark")
+            revision = f"{tag}{hash}"
+            line = [
+                column if index != 2 else revision
+                for index, column in enumerate(line)
+            ]
+            new_lines.append(line)
+
+        return new_lines
 
 
 def _format_color(text: str, style: str, theme: str) -> str:

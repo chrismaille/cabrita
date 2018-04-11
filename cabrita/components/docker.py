@@ -4,7 +4,7 @@ import os
 import re
 import time
 from enum import Enum
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from tzlocal import get_localzone
 
@@ -12,22 +12,31 @@ from cabrita.abc.base import InspectTemplate
 from cabrita.abc.utils import get_path
 from cabrita.components.config import Compose
 
-OUT = u"⭧"
-IN = u"⭨"
+IN = u"↗"
+OUT = u"↘"
+BOTH = u"⇄"
 
 
-class PortDirection(Enum):
-    hidden = 0
-    external = 1
-    internal = 2
-    both = 3
+class PortDetail(Enum):
+    external = "external"
+    internal = "internal"
+    both = "both"
+
+
+class PortView(Enum):
+    hidden = "hidden"
+    column = "column"
+    name = "name"
+    status = "status"
 
 
 class DockerInspect(InspectTemplate):
 
-    def __init__(self, compose: Compose, interval: int, ports: PortDirection, files_to_watch: List[str], services_to_check_git: List[str]) -> None:
+    def __init__(self, compose: Compose, interval: int, port_view: PortView, port_detail: PortDetail,
+                 files_to_watch: List[str], services_to_check_git: List[str]) -> None:
         super(DockerInspect, self).__init__(compose, interval)
-        self.show_ports = ports
+        self.port_view = PortView(port_view)
+        self.port_detail = PortDetail(port_detail)
         self.files_to_watch = files_to_watch
         self.services_to_check_git = services_to_check_git
         self.default_data = {
@@ -40,6 +49,7 @@ class DockerInspect(InspectTemplate):
     def inspect(self, service: str) -> None:
         container_name = self._get_container_name(service)
         inspect_data = self._get_inspect_data(container_name)
+
         if not inspect_data:
             service_status = "Not Found"
             text_style = "info"
@@ -51,6 +61,7 @@ class DockerInspect(InspectTemplate):
         else:
             service_status, text_style, text_theme = self._define_status(inspect_data)
 
+
         self._status[service] = {
             "name": service,
             "status": service_status,
@@ -60,36 +71,31 @@ class DockerInspect(InspectTemplate):
         }
 
     def _get_service_ports(self, service: str) -> str:
-        service_string = []
+        internal_ports = []
+        external_ports = []
         port_list = self.compose.get_from_service(service, 'ports') or ""
 
-        if self.show_ports == PortDirection.external:
-            for port in port_list:
-                if ":" in port:
-                    service_string.append(f"{OUT} {port.split(':')[0]}")
-        elif self.show_ports == PortDirection.internal:
-            for port in port_list:
-                if ":" in port:
-                    service_string.append(f"{IN} {port.split(':')[-1]}")
-                else:
-                    service_string.append(f"{IN} {port}")
+        if not port_list:
+            return ""
+
+        for port in port_list:
+            if ":" in port:
+                external_ports.append(f"{port.split(':')[0]}")
+                internal_ports.append(f"{port.split(':')[-1]}")
+            else:
+                internal_ports.append(f"{port}")
+
+        if internal_ports == external_ports:
+            return f'{BOTH} {" ".join(external_ports)}'
+
+        if self.port_detail == PortDetail.external:
+            service_string = f'{OUT} {" ".join(external_ports)}'
+        elif self.port_detail == PortDetail.internal:
+            service_string = f'{IN} {" ".join(internal_ports)}'
         else:
-            for port in port_list:
-                if ":" in port:
-                    service_string.append(
-                        "{} {} {} {}".format(
-                            OUT,
-                            port.split(":")[0],
-                            IN,
-                            port.split(":")[-1]
-                        )
-                    )
-                else:
-                    service_string.append(f"{IN} {port}")
-        if len(service_string) == 1:
-            return "".join(service_string)
-        else:
-            return ",".join(service_string)
+            service_string = f'{OUT} {" ".join(external_ports)} {IN} {" ".join(internal_ports)}'
+
+        return service_string
 
     def _get_container_name(self, service: str) -> str:
         # Try container_name first
@@ -108,8 +114,10 @@ class DockerInspect(InspectTemplate):
         )
         return json.loads(ret)[0] if ret else {}
 
-    def _define_status(self, inspect_data) -> Tuple[str, str, str]:
+    def _define_status(self, inspect_data) -> Tuple[str, str, Optional[str]]:
         theme = None
+        if not inspect_data.get('State'):
+            return "Error", "error", None
         if inspect_data['State'].get('Health', False):
             if inspect_data['State']['Status'].lower() == 'running':
                 stats = inspect_data['State']['Health']['Status'].title()
@@ -141,6 +149,7 @@ class DockerInspect(InspectTemplate):
                 theme = "dark"
             else:
                 style = "error"
+
         return stats, style, theme
 
     def _need_build(self, service: str, inspect_data: dict) -> bool:
@@ -167,7 +176,9 @@ class DockerInspect(InspectTemplate):
             test_date = datetime.datetime.strptime(
                 date, "%Y-%m-%dT%H:%M:%S.%f %z")
 
-        label = inspect_data['Config']['Labels']['com.docker.compose.service']
+        label = inspect_data['Config']['Labels'].get('com.docker.compose.service')
+        if not label:
+            return False
         full_path = None
         if test_date and self.compose.get_from_service(label, 'build'):
             build_path = self.compose.get_from_service(label, 'build')
@@ -200,5 +211,3 @@ class DockerInspect(InspectTemplate):
                     return True
 
         return False
-
-

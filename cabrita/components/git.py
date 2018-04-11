@@ -22,7 +22,45 @@ class GitInspect(InspectTemplate):
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
         self.modified = False
-        self.default_data = "--"
+        self.default_data = ""
+
+
+    def get_git_revision_from_path(self, path):
+        git_tag = self.run(
+            'cd {} && git describe --tags $(git rev-list --tags --max-count=1 2> /dev/null) 2> /dev/null'.format(path),
+            get_stdout=True
+        )
+        git_hash = self.run(
+            'cd {} && git rev-parse --short HEAD 2> /dev/null'.format(path),
+            get_stdout=True
+        )
+        if not git_hash and git_tag:
+            git_status = "--"
+        else:
+            git_status = "{}@{}".format(git_tag.replace('\n', ''),
+                                        git_hash.replace('\n', '')) if git_tag else git_hash.replace('\n', '')
+        return git_status
+
+
+    def get_git_revision(self, service):
+        path = self.compose.get_build_path(service)
+        return self.get_git_revision_from_path(path)
+
+
+    def get_behind_state(self, path):
+        git_behind = self.run(
+            "cd {} && git fetch && git status -bs --porcelain 2> /dev/null".format(path),
+            get_stdout=True
+        )
+
+        if not git_behind:
+            git_state = formatStr.error('Error', use_prefix=False)
+        elif 'behind' in git_behind:
+            git_state = formatStr.error('NEED PULL', use_prefix=False)
+        else:
+            git_state = formatStr.success("OK", use_prefix=False)
+        return git_state
+
 
     def inspect(self, service: str) -> str:
         self.modified = False
@@ -44,15 +82,15 @@ class GitInspect(InspectTemplate):
 
             text = "{}{}{}".format(
                 branch,
-                formatStr.error(" {}{}".format(ARROW_DOWN, branch_behind), use_prefix=False) if branch_behind else "",
-                formatStr.error(" {}{}".format(ARROW_UP, branch_ahead), use_prefix=False) if branch_ahead else ""
+                formatStr.error(" {} {}".format(ARROW_DOWN, branch_behind), use_prefix=False) if branch_behind else "",
+                formatStr.error(" {} {}".format(ARROW_UP, branch_ahead), use_prefix=False) if branch_ahead else ""
             )
             if target_branch_ahead or target_branch_behind:
                 text += " ({}{}{})".format(
                     self.target_branch,
-                    formatStr.error(" {}{}".format(ARROW_DOWN, target_branch_behind),
+                    formatStr.error(" {} {}".format(ARROW_DOWN, target_branch_behind),
                                     use_prefix=False) if target_branch_behind else "",
-                    formatStr.error(" {}{}".format(ARROW_UP, target_branch_ahead),
+                    formatStr.error(" {} {}".format(ARROW_UP, target_branch_ahead),
                                     use_prefix=False) if target_branch_ahead else ""
                 )
             self._status[service] = formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,

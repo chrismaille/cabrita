@@ -2,12 +2,14 @@ import os
 import sys
 
 from blessed import Terminal
+from buzio import console
 from dashing import dashing
 from dashing.dashing import HSplit, VSplit
 from raven import Client
 from typing import Union
 
 from cabrita.components.box import Box
+from cabrita.components.config import Config
 
 client = None
 if os.getenv('CABRITA_SENTRY_DSN'):
@@ -20,13 +22,25 @@ class Dashboard:
 
     Initiate the main loop.
     """
-    def __init__(self, layout: str) -> None:
+    def __init__(self, config: Config) -> None:
         self.small_boxes = []
         self.large_boxes = []
         self.compose_watch: Box = None
         self.user_watches: Box = None
         self.system_watch: Box = None
-        self.layout = layout
+        self.config = config
+        self.layout = self.config.layout
+
+    def _log_box(self, box):
+        log_text = f"Box '{box.title}' added."
+        if box.docker.interval > 0:
+            log_text += f" Inspecting docker containers each {box.docker.interval} seconds."
+        if box.git.interval > 0:
+            log_text += f" Inspecting git repositories each {box.git.interval} seconds."
+        if box.interval > 0:
+            log_text += f' Refreshing data each {box.interval} seconds.'
+        log_text += f" Services inside: {', '.join(box.services)}."
+        console.info(log_text)
 
     def run(self) -> None:
         term = Terminal()
@@ -50,6 +64,7 @@ class Dashboard:
             0 if box.main else len(box_list),
             box
         )
+        self._log_box(box)
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
 
@@ -57,14 +72,16 @@ class Dashboard:
             self.user_watches.widget,
             VSplit(
                 self.compose_watch.widget,
-                self.system_watch.widget
-            )
+                self.system_watch.widget,
+                background_color=self.config.background_color_value
+            ),
+            background_color=self.config.background_color_value
         )
         small_box_widgets = [
             b.widget
             for b in self.small_boxes
         ]
-        sm = dashing.HSplit(*small_box_widgets, st) if small_box_widgets else st
+        sm = dashing.HSplit(*small_box_widgets, st, background_color=self.config.background_color_value) if small_box_widgets else st
 
         if self.layout == "horizontal":
             func = HSplit
@@ -76,8 +93,8 @@ class Dashboard:
             for b in self.large_boxes
         ]
         if large_box_widgets:
-            ui = func(*large_box_widgets, sm, terminal=term, main=True)
+            ui = func(*large_box_widgets, sm, terminal=term, main=True, background_color=self.config.background_color_value)
         else:
-            ui = func(sm, terminal=term, main=True)
+            ui = func(sm, terminal=term, main=True, background_color=self.config.background_color_value)
 
         return ui

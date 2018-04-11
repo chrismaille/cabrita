@@ -25,11 +25,12 @@ def run(path):
     """
     print("")
     console.box("Cabrita v{}".format(__version__))
-    check_version()
+    version = check_version()
     console.info("Loading Configuration...")
     dashboard = DashboardCommand()
     dashboard.add_config(path)
     dashboard.add_compose()
+    dashboard.add_version(version)
     if dashboard.config.is_valid and dashboard.compose.is_valid:
         console.success('Configuration complete. Starting dashboard...')
         dashboard.execute()

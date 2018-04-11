@@ -2,6 +2,7 @@ from typing import List, Union, Optional
 
 from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
+from cabrita.components import BoxColor
 
 
 def _check_v3() -> bool:
@@ -33,6 +34,14 @@ class Config(ConfigTemplate):
     @property
     def boxes(self) -> List[dict]:
         return self.data['boxes']
+
+    @property
+    def background_color(self):
+        return getattr(BoxColor, self.data.get('background_color', 'black'))
+
+    @property
+    def background_color_value(self):
+        return self.background_color.value
 
     @property
     def interval(self) -> int:
@@ -73,6 +82,17 @@ class Config(ConfigTemplate):
             bool
         """
         return True
+
+    def get_compose_path(self, compose_path: str) -> str:
+        """
+        Get build full path for service
+
+        :param service_name:
+            docker service name
+        :return:
+            str
+        """
+        return get_path(compose_path, self.base_path)
 
 
 class Compose(ConfigTemplate):
@@ -138,7 +158,7 @@ class Compose(ConfigTemplate):
         service = [
             self.data['services'][s]
             for s in self.services
-            if service_name.lower() in s
+            if service_name.lower() == s
         ][0]
         return service.get(key, None)
 

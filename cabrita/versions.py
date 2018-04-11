@@ -6,7 +6,7 @@ from typing import Optional, List
 
 import requests
 import sys
-from buzio import console
+from buzio import console, formatStr
 from pkg_resources import parse_version
 from requests import RequestException
 
@@ -59,3 +59,6 @@ def check_version() -> None:
             else:
                 console.error("\nThere is a error during upgrade. Please try again.")
             sys.exit(0)
+        else:
+            return formatStr.error(f'{last_version} (update available)', use_prefix=False)
+    return formatStr.success(last_version, use_prefix=False)
