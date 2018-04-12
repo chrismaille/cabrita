@@ -30,7 +30,7 @@ prompt-toolkit==1.0.15
 psutil==5.4.3
 ptyprocess==0.5.2
 pycodestyle==2.4.0
-pydashing==1.0.0.dev70088
+pydashing==1.0.0
 pydocstyle==2.1.1
 Pygments==2.2.0
 pyparsing==2.2.0
@@ -46,7 +46,7 @@ snowballstemmer==1.2.1
 Sphinx==1.7.2
 sphinxcontrib-websupport==1.0.1
 tabulate==0.8.2
-tqdm==4.20.0
+tqdm==4.21.0
 traitlets==4.3.2
 twine==1.11.0
 typed-ast==1.1.0
