@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime, timedelta
 from typing import List
 
 import psutil
@@ -11,16 +12,31 @@ from cabrita.abc.utils import run_command
 from cabrita.components.box import Box
 
 
-class DockerComposeWatch(Box):
+class Watch(Box):
+
+    @property
+    def interval(self):
+        return self._interval if self._interval else 0.50
+
+    @interval.setter
+    def interval(self, value):
+        self._interval = value
+
+
+class DockerComposeWatch(Watch):
 
     def __init__(self, **kwargs):
         self.config = kwargs.pop('config')
         super(DockerComposeWatch, self).__init__(**kwargs)
+        self.interval = 15
+        self.last_update = datetime.now() - timedelta(seconds=self.interval)
 
     def run(self):
+        if not self.can_update:
+            return
         table_lines = []
         for file in self.config.compose_files:
-            full_path = self.config.get_compose_path(file)
+            full_path = self.config.get_compose_path(file, os.path.dirname(file))
             path = os.path.dirname(full_path)
             filename = os.path.splitext(os.path.basename(full_path))[0]
             git_revision = self.git.get_git_revision_from_path(path)
@@ -37,7 +53,7 @@ class DockerComposeWatch(Box):
                                     title="Docker-Compose")
 
 
-class UserWatch(Box):
+class UserWatch(Watch):
 
     def __init__(self, **kwargs):
         super(UserWatch, self).__init__(**kwargs)
@@ -51,7 +67,7 @@ class UserWatch(Box):
         self._watchers.append(watch)
 
 
-class SystemWatch(Box):
+class SystemWatch(Watch):
 
     def __init__(self, **kwargs):
         self.version = kwargs.pop('version')

@@ -1,3 +1,5 @@
+import os
+
 from buzio import console
 
 from cabrita.components.box import Box
@@ -20,7 +22,7 @@ class DashboardCommand:
     def add_compose(self) -> None:
         self.compose = Compose()
         for compose in self.config.compose_files:
-            self.compose.add_path(compose)
+            self.compose.add_path(compose, base_path=os.path.dirname(compose))
         self.compose.load_data()
 
     def _add_watchers(self) -> None:

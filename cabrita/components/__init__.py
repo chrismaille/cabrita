@@ -18,7 +18,9 @@ class BoxColor(Enum):
     | white   | 7      | 15     |
 
     """
-    black = 0
-    yellow = 11
+    black = 16
+    grey = 0
+    blue = 4
     cyan = 14
+    yellow = 11
     white = 7

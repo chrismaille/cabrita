@@ -83,7 +83,7 @@ class Config(ConfigTemplate):
         """
         return True
 
-    def get_compose_path(self, compose_path: str) -> str:
+    def get_compose_path(self, compose_path: str, base_path: str) -> str:
         """
         Get build full path for service
 
@@ -92,7 +92,7 @@ class Config(ConfigTemplate):
         :return:
             str
         """
-        return get_path(compose_path, self.base_path)
+        return get_path(compose_path, base_path)
 
 
 class Compose(ConfigTemplate):
@@ -169,3 +169,4 @@ class Compose(ConfigTemplate):
             bool
         """
         return True
+

@@ -11,17 +11,23 @@ from cabrita.components.docker import DockerInspect, PortView, PortDetail
 from cabrita.components.git import GitInspect
 
 
+def update_box(box):
+    box.run()
+    return box.widget
+
+
 class Box:
 
     def __init__(self, background_color: BoxColor = BoxColor.black, compose: Compose = None, git: GitInspect = None,
                  docker: DockerInspect = None) -> None:
-        self._widget = ""
         self.last_update = datetime.now()
         self.data = {}
         self.compose = compose
         self.git = git
         self.docker = docker
         self.background_color = background_color
+        self._widget = dashing.Text("Fetching data...", color=6, border_color=5,
+                                    background_color=background_color.value)
 
     @property
     def can_update(self) -> bool:
@@ -29,9 +35,7 @@ class Box:
         return seconds_elapsed >= self.interval
 
     @property
-    def widget(self) -> str:
-        if self.can_update:
-            self.run()
+    def widget(self) -> object:
         return self._widget
 
     @widget.setter
@@ -48,7 +52,7 @@ class Box:
 
     @property
     def interval(self):
-        return int(self.data.get('interval', 0))
+        return float(self.data.get('interval', 0.50))
 
     @property
     def show_git(self) -> bool:
@@ -89,7 +93,7 @@ class Box:
     @property
     def background_color(self):
         return self._background_color
-    
+
     @background_color.setter
     def background_color(self, value: BoxColor):
         self._background_color = value.value
@@ -135,9 +139,9 @@ class Box:
         if self.includes and self.categories:
             main_category = self.includes[0].lower()
             services_in_line = [
-                service
-                for service in self.services
-                if main_category in service
+                s
+                for s in self.services
+                if main_category in s
             ]
         else:
             services_in_line = self.services
