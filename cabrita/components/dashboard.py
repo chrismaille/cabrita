@@ -43,11 +43,11 @@ class Dashboard:
 
     def _log_box(self, box):
         log_text = "Box '{}' added.".format(box.title)
-        if box.docker.interval > 0:
+        if box.docker.interval > 1:
             log_text += " Inspecting docker containers each {} seconds.".format(box.docker.interval)
-        if box.git.interval > 0:
+        if box.git.interval > 1:
             log_text += " Inspecting git repositories each {} seconds.".format(box.git.interval)
-        if box.interval > 0:
+        if box.interval > 1:
             log_text += ' Refreshing data each {} seconds.'.format(box.interval)
         log_text += " Services inside: {}.".format(', '.join(box.services))
         console.info(log_text)
@@ -71,7 +71,7 @@ class Dashboard:
         except BaseException as exc:
             if client:
                 client.captureException()
-            sleep(1)
+                sleep(0.5)
             raise exc
 
     def add_box(self, box: Box) -> None:
