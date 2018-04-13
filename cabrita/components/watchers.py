@@ -1,14 +1,14 @@
 import os
 import re
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Type
 
 import psutil
 from buzio import formatStr
 from dashing import dashing
 from tabulate import tabulate
 
-from cabrita.abc.utils import run_command
+from cabrita.abc.utils import run_command, get_path
 from cabrita.components.box import Box
 
 
@@ -56,15 +56,90 @@ class DockerComposeWatch(Watch):
 class UserWatch(Watch):
 
     def __init__(self, **kwargs):
+        self.config = kwargs.pop('config')
         super(UserWatch, self).__init__(**kwargs)
-        self._watchers = []
+        self._watchers = self.config.watchers
+        self.global_interval = self._watchers.get('global_interval', 0.25)
+        self.result = {
+            'file': {},
+            'external': {},
+            'ping': {}
+        }
 
     def run(self):
-        self._widget = dashing.Text("Hello World", color=6, border_color=5, background_color=self.background_color,
+        for watch in self.file_watchers:
+            self.execute_file_watch(watch)
+
+        table_header = []
+        table_lines = [
+            ("File", value[0], value[1])
+            for key, value in self.result['file'].items()
+        ]
+        table = tabulate(table_lines, table_header)
+        self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color,
                                     title="Watchers")
 
-    def add_watch(self, watch: str) -> None:
-        self._watchers.append(watch)
+    @property
+    def file_watchers(self) -> dict:
+        return self._watchers.get('file_watch', {})
+
+    @property
+    def external_tools(self):
+        return self._watchers.get('external_tool', [])
+
+    @property
+    def pings(self):
+        return self._watchers.get('ping', [])
+
+    def execute_file_watch(self, watch: str) -> None:
+        watch_data = self.file_watchers.get(watch)
+
+        if not self.result.get(watch):
+            self.result['file'][watch] = [watch_data['name'], "Fetching..."]
+        if (datetime.now() - self.last_update).total_seconds() < watch_data.get('interval', self.global_interval):
+            return
+
+        # Check destination git state
+        dest_path = get_path(watch_data['dest_path'], self.config.base_path)
+        dest_state = self.git.get_behind_state(dest_path)
+
+        # Check source git state
+        if watch_data.get('source_path'):
+            source_path = get_path(watch_data['source_path'], self.config.base_path)
+            source_state = self.git.get_behind_state(source_path)
+
+            # Check timestamp between files
+            source_name = watch_data['source_name'] if watch_data.get('source_name') else watch_data['name']
+
+            dest_full_path = os.path.join(dest_path, watch_data['name'])
+            source_full_path = os.path.join(source_path, source_name)
+
+            if not os.path.isfile(
+                    dest_full_path) or not os.path.isfile(source_full_path):
+                time_state = formatStr.warning(
+                    'NOT FOUND',
+                    use_prefix=False
+                )
+            else:
+                source_date = os.path.getmtime(source_full_path)
+                dest_date = os.path.getmtime(dest_full_path)
+
+                if source_date > dest_date:
+                    time_state = formatStr.error(
+                        'NEED UPDATE',
+                        use_prefix=False)
+                else:
+                    time_state = formatStr.success(
+                        'OK',
+                        use_prefix=False)
+
+            # Save state in dictionary
+            if not "OK" in source_state:
+                self.result['file'][watch] = [watch_data['name'], source_state]
+            elif not "OK" in dest_state:
+                self.result['file'][watch] = [watch_data['name'], dest_state]
+            else:
+                self.result['file'][watch] = [watch_data['name'], time_state]
 
 
 class SystemWatch(Watch):
@@ -94,7 +169,7 @@ class SystemWatch(Watch):
             m = [
                 multiple[key]
                 for key in multiple
-                if key == size
+                if key.upper() == size.upper()
             ][0]
             total_size += float(value) * m
 

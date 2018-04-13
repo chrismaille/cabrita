@@ -1,3 +1,4 @@
+import os
 import re
 from enum import Enum
 from typing import Tuple
@@ -48,13 +49,17 @@ class GitInspect(InspectTemplate):
 
 
     def get_behind_state(self, path):
+
+        if not os.path.isdir(os.path.join(path, '.git')):
+            return "OK"
+
         git_behind = self.run(
             "cd {} && git fetch && git status -bs --porcelain 2> /dev/null".format(path),
             get_stdout=True
         )
 
         if not git_behind:
-            git_state = formatStr.error('Error', use_prefix=False)
+            git_state = ""
         elif 'behind' in git_behind:
             git_state = formatStr.error('NEED PULL', use_prefix=False)
         else:

@@ -41,10 +41,10 @@ class DashboardCommand:
             version=self.version
         )
         self.dashboard.user_watches = UserWatch(
-            background_color=self.config.background_color
+            background_color=self.config.background_color,
+            git=git,
+            config=self.config
         )
-        for watch in self.config.watchers:
-            self.dashboard.user_watches.add_watch(watch)
 
     def _add_services_in_boxes(self):
         included_services = []
