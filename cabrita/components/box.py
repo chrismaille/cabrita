@@ -5,6 +5,7 @@ from buzio import formatStr
 from dashing import dashing
 from tabulate import tabulate
 
+from cabrita.abc.utils import format_color, get_sentry_client
 from cabrita.components import BoxColor
 from cabrita.components.config import Compose
 from cabrita.components.docker import DockerInspect, PortView, PortDetail
@@ -12,8 +13,14 @@ from cabrita.components.git import GitInspect
 
 
 def update_box(box):
-    box.run()
-    return box.widget
+    try:
+        box.run()
+        return box.widget
+    except Exception:
+        client = get_sentry_client()
+        if client:
+            client.captureException()
+        raise
 
 
 class Box:
@@ -156,8 +163,8 @@ class Box:
             service_status = self._add_ports("status")
 
             table_data = [
-                _format_color(service_name, self.service_data['style'], self.service_data['theme']),
-                _format_color(service_status, self.service_data['style'], self.service_data['theme'])
+                format_color(service_name, self.service_data['style'], self.service_data['theme']),
+                format_color(service_status, self.service_data['style'], self.service_data['theme'])
             ]
 
             if self.show_revision:
@@ -165,7 +172,7 @@ class Box:
 
             if self.port_view == PortView.column:
                 port_string = "" if not self.service_data['ports'] else self._add_ports("ports")
-                table_data.append(_format_color(port_string, self.service_data['style'], self.service_data['theme']))
+                table_data.append(format_color(port_string, self.service_data['style'], self.service_data['theme']))
 
             if self.show_git:
                 table_data.append(self.git.status(service))
@@ -175,8 +182,8 @@ class Box:
                 if not category_data:
                     table_data.append('--')
                 else:
-                    category_status = _format_color(category_data['status'], category_data['style'],
-                                                    category_data['theme'])
+                    category_status = format_color(category_data['status'], category_data['style'],
+                                                   category_data['theme'])
                     if self.port_view == PortView.status and category_data['ports'] and category_data[
                         'status'].lower() not in ["exited", "error", "not found"]:
                         category_status += ' {}'.format(category_data["ports"])
@@ -223,8 +230,3 @@ class Box:
             new_lines.append(line)
 
         return new_lines
-
-
-def _format_color(text: str, style: str, theme: str) -> str:
-    func = getattr(formatStr, style)
-    return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)

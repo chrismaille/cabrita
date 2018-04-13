@@ -21,7 +21,8 @@ install_requires = [
     "requests",
     "raven",
     "pydashing",
-    "tzlocal"
+    "tzlocal",
+    "backtrace"
 ]
 
 if 'dev' in __version__:

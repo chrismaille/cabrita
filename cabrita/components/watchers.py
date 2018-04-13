@@ -1,39 +1,46 @@
 import os
 import re
 from datetime import datetime, timedelta
-from typing import List, Type
 
 import psutil
 from buzio import formatStr
 from dashing import dashing
 from tabulate import tabulate
 
-from cabrita.abc.utils import run_command, get_path
+from cabrita.abc.utils import run_command, get_path, format_color
 from cabrita.components.box import Box
 
 
 class Watch(Box):
+    _interval = 30
 
     @property
     def interval(self):
-        return self._interval if self._interval else 0.50
+        return self._interval
 
     @interval.setter
     def interval(self, value):
         self._interval = value
 
+    def _execute(self) -> None:
+        raise NotImplementedError()
+
+    def run(self) -> None:
+        if not self.can_update:
+            return
+        self._execute()
+
 
 class DockerComposeWatch(Watch):
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         self.config = kwargs.pop('config')
+        self.version = kwargs.pop('version')
         super(DockerComposeWatch, self).__init__(**kwargs)
         self.interval = 15
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
 
-    def run(self):
-        if not self.can_update:
-            return
+    def _execute(self) -> None:
         table_lines = []
         for file in self.config.compose_files:
             full_path = self.config.get_compose_path(file, os.path.dirname(file))
@@ -49,8 +56,9 @@ class DockerComposeWatch(Watch):
 
         table = tabulate(table_lines, [])
 
+        title = "{}:Cabrita v.{}".format(self.config.title, self.version)
         self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color,
-                                    title="Docker-Compose")
+                                    title=title)
 
 
 class UserWatch(Watch):
@@ -59,45 +67,75 @@ class UserWatch(Watch):
         self.config = kwargs.pop('config')
         super(UserWatch, self).__init__(**kwargs)
         self._watchers = self.config.watchers
-        self.global_interval = self._watchers.get('global_interval', 0.25)
         self.result = {
             'file': {},
             'external': {},
             'ping': {}
         }
+        self.last_update = datetime.now() - timedelta(seconds=self.interval)
 
-    def run(self):
-        for watch in self.file_watchers:
-            self.execute_file_watch(watch)
+    def _execute(self):
+
+        for watch in self.file:
+            self._execute_watch('file', watch)
+
+        for watch in self.ping:
+            self._execute_watch('ping', watch)
 
         table_header = []
-        table_lines = [
+        file_lines = [
             ("File", value[0], value[1])
             for key, value in self.result['file'].items()
         ]
+        ping_lines = [
+            ("Ping", value[0], value[1])
+            for key, value in self.result['ping'].items()
+        ]
+        separator = [['--------', '------------------', '-------']]
+        if file_lines and ping_lines:
+            table_lines = file_lines + separator + ping_lines
+        else:
+            table_lines = file_lines or ping_lines
         table = tabulate(table_lines, table_header)
         self._widget = dashing.Text(table, color=6, border_color=5, background_color=self.background_color,
                                     title="Watchers")
 
     @property
-    def file_watchers(self) -> dict:
+    def file(self) -> dict:
         return self._watchers.get('file_watch', {})
 
     @property
-    def external_tools(self):
+    def external(self):
         return self._watchers.get('external_tool', [])
 
     @property
-    def pings(self):
-        return self._watchers.get('ping', [])
+    def ping(self):
+        return self._watchers.get('ping', {})
 
-    def execute_file_watch(self, watch: str) -> None:
-        watch_data = self.file_watchers.get(watch)
+    def _execute_watch(self, watch_type: str, watch_name: str):
+        watch_data = getattr(self, watch_type).get(watch_name)
+        if not self.result[watch_type].get(watch_name):
+            self.result[watch_type][watch_name] = [watch_data['name'], "Fetching..."]
+        getattr(self, '_get_{}_result'.format(watch_type))(watch_data, watch_name)
 
-        if not self.result.get(watch):
-            self.result['file'][watch] = [watch_data['name'], "Fetching..."]
-        if (datetime.now() - self.last_update).total_seconds() < watch_data.get('interval', self.global_interval):
-            return
+    def _get_ping_result(self, watch_data: dict, watch_name: str) -> None:
+
+        ret = run_command(
+            'curl -f --connect-timeout {} {} 1>/dev/null 2>/dev/null'.format(watch_data.get('timeout', 1),
+                                                                             watch_data['address'])
+        )
+
+        message_on_success = watch_data.get('message_on_success', "OK")
+        message_on_error = watch_data.get('message_on_error', "ERROR")
+
+        self.result['ping'][watch_name] = [
+            formatStr.success(watch_data['name'], use_prefix=False) if ret else formatStr.error(watch_data['name'],
+                                                                                                use_prefix=False),
+            formatStr.success(message_on_success, use_prefix=False) if ret else formatStr.error(message_on_error,
+                                                                                                use_prefix=False)
+        ]
+
+    def _get_file_result(self, watch_data: dict, watch_name: str) -> None:
 
         # Check destination git state
         dest_path = get_path(watch_data['dest_path'], self.config.base_path)
@@ -116,37 +154,34 @@ class UserWatch(Watch):
 
             if not os.path.isfile(
                     dest_full_path) or not os.path.isfile(source_full_path):
-                time_state = formatStr.warning(
-                    'NOT FOUND',
-                    use_prefix=False
-                )
+                time_state = 'NOT FOUND'
+                style = 'warning'
             else:
                 source_date = os.path.getmtime(source_full_path)
                 dest_date = os.path.getmtime(dest_full_path)
 
                 if source_date > dest_date:
-                    time_state = formatStr.error(
-                        'NEED UPDATE',
-                        use_prefix=False)
+                    time_state = 'NEED UPDATE'
+                    style = "error"
                 else:
-                    time_state = formatStr.success(
-                        'OK',
-                        use_prefix=False)
+                    time_state = 'OK'.ljust(5)
+                    style = "success"
 
             # Save state in dictionary
             if not "OK" in source_state:
-                self.result['file'][watch] = [watch_data['name'], source_state]
+                name = format_color(watch_data['name'], style="error")
+                self.result['file'][watch_name] = [name, source_state]
             elif not "OK" in dest_state:
-                self.result['file'][watch] = [watch_data['name'], dest_state]
+                name = format_color(watch_data['name'], style="error")
+                self.result['file'][watch_name] = [name, dest_state]
             else:
-                self.result['file'][watch] = [watch_data['name'], time_state]
+                name = format_color(watch_data['name'], style=style)
+                self.result['file'][watch_name] = [name, time_state]
 
 
 class SystemWatch(Watch):
 
-    def __init__(self, **kwargs):
-        self.version = kwargs.pop('version')
-        super(SystemWatch, self).__init__(**kwargs)
+    _interval = 0.25
 
     @staticmethod
     def _get_docker_folder_size():
@@ -259,6 +294,5 @@ class SystemWatch(Watch):
                 border_color=docker_color,
                 title="Docker Space Used:{}Gb of {}Gb used".format(docker_usage, round(total_space - free_space, 1)),
                 background_color=self.background_color
-            ),
-            title="Cabrita v. {}".format(self.version)
+            )
         )

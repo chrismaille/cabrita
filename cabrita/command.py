@@ -1,9 +1,6 @@
 import os
 
-from buzio import console
-
 from cabrita.components.box import Box
-from cabrita.components import BoxColor
 from cabrita.components.config import Config, Compose
 from cabrita.components.dashboard import Dashboard
 from cabrita.components.docker import DockerInspect, PortView, PortDetail
@@ -34,11 +31,11 @@ class DashboardCommand:
         self.dashboard.compose_watch = DockerComposeWatch(
             background_color=self.config.background_color,
             git=git,
-            config=self.config
+            config=self.config,
+            version=self.version
         )
         self.dashboard.system_watch = SystemWatch(
-            background_color=self.config.background_color,
-            version=self.version
+            background_color=self.config.background_color
         )
         self.dashboard.user_watches = UserWatch(
             background_color=self.config.background_color,

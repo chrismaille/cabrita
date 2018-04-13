@@ -1,23 +1,16 @@
-import os
 import signal
 import sys
 from datetime import datetime
 from multiprocessing.pool import Pool
-from time import sleep
 from typing import Union
 
 from blessed import Terminal
 from buzio import console
 from dashing import dashing
 from dashing.dashing import HSplit, VSplit
-from raven import Client
 
 from cabrita.components.box import Box, update_box
 from cabrita.components.config import Config
-
-client = None
-if os.getenv('CABRITA_SENTRY_DSN'):
-    client = Client(os.getenv('CABRITA_SENTRY_DSN'))
 
 
 class Dashboard:
@@ -69,9 +62,6 @@ class Dashboard:
             print(term.color(0))
             sys.exit(0)
         except BaseException as exc:
-            if client:
-                client.captureException()
-                sleep(0.5)
             raise exc
 
     def add_box(self, box: Box) -> None:
@@ -98,11 +88,14 @@ class Dashboard:
         signal.signal(signal.SIGINT, original_sigint_handler)
         try:
             new_results = [pool.apply_async(update_box, [b]) for b in boxes_needing_update]
-            new_widgets = [res.get(3600) for res in new_results]
+            new_widgets = [res.get(30) for res in new_results]
 
             self.user_watches.widget = new_widgets[0]
+            self.user_watches.last_update = datetime.now()
             self.compose_watch.widget = new_widgets[1]
+            self.compose_watch.last_update = datetime.now()
             self.system_watch.widget = new_widgets[2]
+            self.system_watch.last_update = datetime.now()
 
             for index, box in enumerate(boxes_needing_update):
                 if index < 3:
@@ -110,6 +103,7 @@ class Dashboard:
                 widget = new_widgets[index]
                 box.widget = widget
                 box.last_update = datetime.now()
+            pool.terminate()
         except KeyboardInterrupt:
             pool.terminate()
             raise

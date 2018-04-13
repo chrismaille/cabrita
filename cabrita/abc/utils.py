@@ -1,7 +1,16 @@
 import os
 import re
 import subprocess
-from typing import Union
+from typing import Union, Optional
+
+from buzio import formatStr
+from raven import Client
+from raven.transport.requests import RequestsHTTPTransport
+
+
+def get_sentry_client() -> Optional[Client]:
+    return Client(os.getenv('CABRITA_SENTRY_DSN'), transport=RequestsHTTPTransport) if os.getenv(
+        'CABRITA_SENTRY_DSN') else None
 
 
 def run_command(
@@ -74,3 +83,11 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
         list_path = os.path.join(base_path, path)
         path = os.path.abspath(list_path)
     return path
+
+
+def format_color(text: str, style: str, theme: str = None) -> str:
+    func = getattr(formatStr, style)
+    return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)
+
+
+client = None

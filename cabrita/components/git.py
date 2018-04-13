@@ -28,11 +28,11 @@ class GitInspect(InspectTemplate):
 
     def get_git_revision_from_path(self, path):
         git_tag = self.run(
-            'cd {} && git describe --tags $(git rev-list --tags --max-count=1 2> /dev/null) 2> /dev/null'.format(path),
+            'cd {} && git describe --tags $(git rev-list --tags --max-count=1 2>/dev/null) 2>/dev/null'.format(path),
             get_stdout=True
         )
         git_hash = self.run(
-            'cd {} && git rev-parse --short HEAD 2> /dev/null'.format(path),
+            'cd {} && git rev-parse --short HEAD 2>/dev/null'.format(path),
             get_stdout=True
         )
         if not git_hash and git_tag:
@@ -86,7 +86,7 @@ class GitInspect(InspectTemplate):
             target_branch_ahead, target_branch_behind = self._get_modifications_in_target_branch(branch)
 
             text = "{}{}{}".format(
-                branch,
+                self._get_abbreviate_name(branch),
                 formatStr.error(" {} {}".format(ARROW_DOWN, branch_behind), use_prefix=False) if branch_behind else "",
                 formatStr.error(" {} {}".format(ARROW_UP, branch_ahead), use_prefix=False) if branch_ahead else ""
             )
@@ -126,6 +126,14 @@ class GitInspect(InspectTemplate):
             get_stdout=True
         )
         return branch.replace("* ", "").replace("\n", "") if branch else ""
+
+
+    def _get_abbreviate_name(self, full_name) -> str:
+        name = full_name.split("/")[-1]
+        if len(name) > 15:
+            return "{}...".format(name[:12])
+        else:
+            return name
 
     def _get_commits(self, path, direction: GitDirection) -> int:
 

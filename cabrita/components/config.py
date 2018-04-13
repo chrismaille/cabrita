@@ -1,3 +1,4 @@
+import os
 from typing import List, Union, Optional
 
 from cabrita.abc.base import ConfigTemplate
@@ -36,6 +37,10 @@ class Config(ConfigTemplate):
         return self.data['boxes']
 
     @property
+    def title(self):
+        return self.data.get('title') or "Docker-Compose"
+
+    @property
     def background_color(self):
         return getattr(BoxColor, self.data.get('background_color', 'black'))
 
@@ -62,26 +67,159 @@ class Config(ConfigTemplate):
             self.console.error("Configuration Version must be informed")
             return False
 
-        if not hasattr(self, "_check_v{}".format(self.version)):
+        if not hasattr(self, "_check_v{}".format(version)):
             self.console.error("Unknown configuration version")
             return False
 
-        return getattr(self, "_check_v{}".format(self.version))
+        return getattr(self, "_check_v{}".format(version))(start_here=True)
 
-    def _check_v1(self) -> bool:
-        raise DeprecationWarning("Wrong version. Please update to version 3.")
+    def _check_v0(self, start_here: bool = False) -> bool:
+        if start_here:
+            self.console.info('Using default configuration.')
+        return self._check_v1()
 
-    def _check_v2(self) -> bool:
-        self.console.warning('This version is deprecated.  Please update to version 3.')
-        return True
+    def _check_v1(self, start_here: bool = False) -> bool:
+        if start_here:
+            self.console.warning('Version 1 is deprecated. Please update to version 2.')
 
-    def _check_v3(self) -> bool:
+        if self.data.get('docker-compose') and (
+                'path' not in self.data.get('docker-compose').keys() or 'name' not in self.data.get(
+            'docker-compose').keys()):
+            self.console.error('Key "docker-compose" must have "name" and "path" parameters')
+            return False
+        docker_compose_data = self.data.pop('docker-compose', {})
+        docker_compose_path = []
+        if docker_compose_data:
+            docker_compose_path = [os.path.join(docker_compose_data['path'], docker_compose_data['name'])]
+        self.data['compose_files'] = docker_compose_path
+
+        ignore_list = self.data.pop('ignore', [])
+        if ignore_list:
+            self.data['ignore_services'] = ignore_list
+
+        watch_files_dict = self.data.pop('files', {})
+        ping_ngrok = self.data.get('check', {}).get('ngrok', False)
+        if watch_files_dict or ping_ngrok:
+            self.data['watchers'] = {}
+            if watch_files_dict:
+                self.data['watchers']['file_watch'] = watch_files_dict
+            if ping_ngrok:
+                self.data['watchers']['ping'] = {
+                    "ngrok": {
+                        "name": "Ngrok Access",
+                        "address": "http://localhost:4040",
+                        "message_on_success": "UP",
+                        "message_on_error": "DOWN"
+                    }
+                }
+
+        if self.data['box']:
+            self.data['boxes'] = {}
+            for box_name in self.data['box']:
+                old_data = self.data['box'][box_name]
+                new_data = {}
+                if old_data.get('catch_all'):
+                    new_data['main'] = True
+                if old_data.get('name'):
+                    new_data['name'] = old_data.get('name')
+                if old_data.get('size'):
+                    new_data['size'] = old_data.get('size')
+                if old_data.get('target_branch'):
+                    new_data['watch_branch'] = old_data['target_branch']
+                if old_data.get('show_ports'):
+                    new_data['port_view'] = old_data['show_ports']
+                if old_data.get('list_only'):
+                    new_data['includes'] = old_data['list_only']
+                if old_data.get('categories'):
+                    new_data['categories'] = old_data['categories']
+                if self.data.get('build_check'):
+                    new_data['watch_for_build_files'] = self.data.get('build_check')
+                if self.data.get('build_check_using_git'):
+                    new_data['watch_for_build_git'] = self.data.get('build_check_using_git')
+                self.data['boxes'][box_name] = new_data
+
+            self.data.pop('box')
+        else:
+            # Create default box
+            self.data['boxes'] = [
+                {
+                    all: {
+                        "main": True,
+                        "name": "All services",
+                        "size": "large",
+                        "show_ports": "column"
+                    }
+                }
+            ]
+        return self._check_v2()
+
+    def _check_v2(self, start_here: bool = False) -> bool:
         """
-        TODO: Validate data from cabrita.yml version 3 files
         :return:
             bool
         """
-        return True
+        if start_here:
+            self.console.info('Validating configuration data...')
+
+        ret = True
+
+        if self.data.get('layout') and self.data.get('layout') not in ['horizontal', 'vertical']:
+            self.console.error('Layout must be vertical or horizontal')
+            ret = False
+
+        if self.data.get('background_color') and self.data.get('background_color') not in BoxColor.__members__:
+            self.console.error('Valid background colors are: {}'.format(",".join(BoxColor.__members__)))
+            ret = False
+
+        if self.data.get('compose_files') and not isinstance(self.data.get('compose_files'), list):
+            self.console.error('Compose Files must be a list')
+            ret = False
+
+        if self.data.get('ignore_services') and not isinstance(self.data.get('ignore_services'), list):
+            self.console.error('Ignore Services must be a list')
+            ret = False
+
+        if self.data.get('boxes'):
+            # Check for more than one main box
+            main_box_count = len([
+                box_name
+                for box_name in self.data['boxes']
+                if self.data['boxes'].get(box_name).get('main')
+            ])
+            if main_box_count > 1:
+                self.console.error('Only one box must have the "main" parameter')
+                ret = False
+            if main_box_count == 0:
+                self.console.error('No box have the "main" parameter')
+                ret = False
+
+        for box_name in self.data.get('boxes'):
+            data = self.data['boxes'][box_name]
+            if data.get('size') and data.get('size') not in ['big', 'small']:
+                self.console.error('Size for Box "{}" must be "big" or "small"'.format(box_name))
+                ret = False
+            if data.get('port_view') and data.get('port_view') not in ['column', 'name', 'status']:
+                self.console.error('Port View in Box "{}" must be "column", "name" or "status".'.format(box_name))
+                ret = False
+            if data.get('port_detail') and data.get('port_detail') not in ['external', 'internal', 'both']:
+                self.console.error('Port Detail in Box "{}" must be "external", "internal" or "both".'.format(box_name))
+                ret = False
+            if data.get('includes') and data.get('includes') and not isinstance(data.get('includes'), list):
+                self.console.error('Include in Box "{}" must be a list'.format(box_name))
+                ret = False
+            if data.get('categories') and data.get('categories') and not isinstance(data.get('categories'), list):
+                self.console.error('Categories in Box "{}" must be a list'.format(box_name))
+                ret = False
+            if self.data.get('watch_for_build_files'):
+                if not isinstance(self.data.get('watch_for_build_files'), list):
+                    self.console.error('Watch for Build Files Check must be a list')
+                    ret = False
+            if self.data.get('watch_for_build_git'):
+                if not isinstance(self.data.get('watch_for_build_git'), list):
+                    self.console.error('Watch for Build Git Check must be a list')
+                    ret = False
+
+        return ret
 
     def get_compose_path(self, compose_path: str, base_path: str) -> str:
         """
@@ -169,4 +307,3 @@ class Compose(ConfigTemplate):
             bool
         """
         return True
-
