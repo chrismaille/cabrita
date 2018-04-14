@@ -1,6 +1,6 @@
 test:
-	nosetests --with-coverage --cover-package=outpak --cover-min-percentage=80
-	pydocstyle --match-dir=outpak
+	nosetests --with-coverage --cover-package=cabrita --cover-min-percentage=90
+	pydocstyle --match-dir=cabrita
 	pycodestyle outpak/
 
 break:

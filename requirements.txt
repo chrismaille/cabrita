@@ -21,9 +21,10 @@ jedi==0.11.1
 Jinja2==2.10
 MarkupSafe==1.0
 mypy==0.580
+nose==1.3.7
 packaging==17.1
 parso==0.1.1
-pexpect==4.4.0
+pexpect==4.5.0
 pickleshare==0.7.4
 pkginfo==1.4.2
 prompt-toolkit==1.0.15

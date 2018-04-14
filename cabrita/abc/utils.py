@@ -89,5 +89,3 @@ def format_color(text: str, style: str, theme: str = None) -> str:
     func = getattr(formatStr, style)
     return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)
 
-
-client = None
