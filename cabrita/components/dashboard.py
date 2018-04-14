@@ -6,6 +6,7 @@ from typing import Union
 
 from blessed import Terminal
 from buzio import console
+from colorama import Style
 from dashing import dashing
 from dashing.dashing import HSplit, VSplit
 
@@ -62,6 +63,8 @@ class Dashboard:
             print(term.color(0))
             sys.exit(0)
         except BaseException as exc:
+            print(term.exit_fullscreen)
+            print(Style.RESET_ALL)
             raise exc
 
     def add_box(self, box: Box) -> None:

@@ -10,17 +10,20 @@ from cabrita.components.watchers import DockerComposeWatch, SystemWatch, UserWat
 
 class DashboardCommand:
 
-    def add_config(self, path: str) -> None:
+    def add_config(self, path: str, compose_path: tuple) -> None:
         self.cabrita_path = path
         self.config = Config()
         self.config.add_path(self.cabrita_path)
         self.config.load_data()
+        self.config.manual_compose_paths = list(compose_path)
 
     def add_compose(self) -> None:
         self.compose = Compose()
         for compose in self.config.compose_files:
             self.compose.add_path(compose, base_path=os.path.dirname(compose))
         self.compose.load_data()
+        if self.config.version == 0:
+            self.config.generate_boxes(self.compose.services)
 
     def _add_watchers(self) -> None:
         git = GitInspect(
@@ -81,10 +84,11 @@ class DashboardCommand:
                 main_box = box
             else:
                 self.dashboard.add_box(box)
-        for service in self.compose.services:
-            if service not in included_services and service not in self.config.ignore_services:
-                main_box.add_service(service)
-        self.dashboard.add_box(main_box)
+        if main_box:
+            for service in self.compose.services:
+                if service not in included_services and service not in self.config.ignore_services:
+                    main_box.add_service(service)
+            self.dashboard.add_box(main_box)
 
     def execute(self):
         self.dashboard = Dashboard(config=self.config)

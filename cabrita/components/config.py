@@ -1,18 +1,11 @@
+import math
 import os
+import shutil
 from typing import List, Union, Optional
 
 from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
 from cabrita.components import BoxColor
-
-
-def _check_v3() -> bool:
-    """
-    TODO: Validate data from cabrita.yml files
-    :return:
-        bool
-    """
-    return True
 
 
 class Config(ConfigTemplate):
@@ -53,45 +46,45 @@ class Config(ConfigTemplate):
         return int(self.data['interval'])
 
     @property
-    def watchers(self) -> List[str]:
-        return self.data.get('watchers', [])
+    def watchers(self) -> dict:
+        return self.data.get('watchers', {})
 
     @property
     def is_valid(self) -> bool:
-        if not self.data:
-            raise ValueError("Data must be loaded before validation")
 
-        version = int(self.data.get("version"))
-
-        if not version:
-            self.console.error("Configuration Version must be informed")
-            return False
-
-        if not hasattr(self, "_check_v{}".format(version)):
+        if not hasattr(self, "_check_v{}".format(self.version)):
             self.console.error("Unknown configuration version")
             return False
 
-        return getattr(self, "_check_v{}".format(version))(start_here=True)
+        return getattr(self, "_check_v{}".format(self.version))(start_here=True)
 
     def _check_v0(self, start_here: bool = False) -> bool:
         if start_here:
             self.console.info('Using default configuration.')
+
+        self.data['layout'] = "horizontal"
+        if self.manual_compose_paths:
+            self.data['compose_files'] = self.manual_compose_paths
+
         return self._check_v1()
 
     def _check_v1(self, start_here: bool = False) -> bool:
         if start_here:
             self.console.warning('Version 1 is deprecated. Please update to version 2.')
 
-        if self.data.get('docker-compose') and (
-                'path' not in self.data.get('docker-compose').keys() or 'name' not in self.data.get(
-            'docker-compose').keys()):
-            self.console.error('Key "docker-compose" must have "name" and "path" parameters')
-            return False
-        docker_compose_data = self.data.pop('docker-compose', {})
-        docker_compose_path = []
-        if docker_compose_data:
-            docker_compose_path = [os.path.join(docker_compose_data['path'], docker_compose_data['name'])]
-        self.data['compose_files'] = docker_compose_path
+        if self.manual_compose_paths:
+            self.data['compose_files'] = self.manual_compose_paths
+        else:
+            if self.data.get('docker-compose') and (
+                    'path' not in self.data.get('docker-compose').keys() or 'name' not in self.data.get(
+                'docker-compose').keys()):
+                self.console.error('Key "docker-compose" must have "name" and "path" parameters')
+                return False
+            docker_compose_data = self.data.pop('docker-compose', {})
+            docker_compose_path = []
+            if docker_compose_data:
+                docker_compose_path = [os.path.join(docker_compose_data['path'], docker_compose_data['name'])]
+            self.data['compose_files'] = docker_compose_path
 
         ignore_list = self.data.pop('ignore', [])
         if ignore_list:
@@ -113,7 +106,7 @@ class Config(ConfigTemplate):
                     }
                 }
 
-        if self.data['box']:
+        if self.data.get('box'):
             self.data['boxes'] = {}
             for box_name in self.data['box']:
                 old_data = self.data['box'][box_name]
@@ -139,18 +132,7 @@ class Config(ConfigTemplate):
                 self.data['boxes'][box_name] = new_data
 
             self.data.pop('box')
-        else:
-            # Create default box
-            self.data['boxes'] = [
-                {
-                    all: {
-                        "main": True,
-                        "name": "All services",
-                        "size": "large",
-                        "show_ports": "column"
-                    }
-                }
-            ]
+
         return self._check_v2()
 
     def _check_v2(self, start_here: bool = False) -> bool:
@@ -160,6 +142,9 @@ class Config(ConfigTemplate):
         """
         if start_here:
             self.console.info('Validating configuration data...')
+
+        if self.manual_compose_paths:
+            self.data['compose_files'] = self.manual_compose_paths
 
         ret = True
 
@@ -171,8 +156,11 @@ class Config(ConfigTemplate):
             self.console.error('Valid background colors are: {}'.format(",".join(BoxColor.__members__)))
             ret = False
 
-        if self.data.get('compose_files') and not isinstance(self.data.get('compose_files'), list):
-            self.console.error('Compose Files must be a list')
+        if not self.data.get('compose_files'):
+            self.console.error('You must inform at least one Docker-Compose file path.')
+            ret = False
+        elif not isinstance(self.data.get('compose_files'), list):
+            self.console.error('Docker-Compose files must be a list')
             ret = False
 
         if self.data.get('ignore_services') and not isinstance(self.data.get('ignore_services'), list):
@@ -193,7 +181,7 @@ class Config(ConfigTemplate):
                 self.console.error('No box have the "main" parameter')
                 ret = False
 
-        for box_name in self.data.get('boxes'):
+        for box_name in self.data.get('boxes', {}):
             data = self.data['boxes'][box_name]
             if data.get('size') and data.get('size') not in ['big', 'small']:
                 self.console.error('Size for Box "{}" must be "big" or "small"'.format(box_name))
@@ -231,6 +219,30 @@ class Config(ConfigTemplate):
             str
         """
         return get_path(compose_path, base_path)
+
+    def generate_boxes(self, services: list):
+
+        service_list = sorted(list(services.keys()))
+        self.data['boxes'] = {}
+
+        columns, lines = shutil.get_terminal_size()
+        max_services_per_box = lines - 10
+        num_of_boxes = int(math.ceil(len(service_list) / max_services_per_box))
+        i = 0
+        for box_num in range(num_of_boxes):
+            services_in_box = []
+            while len(services_in_box) <= max_services_per_box and i <= len(service_list) - 1:
+                services_in_box.append(service_list[i])
+                i += 1
+            if services_in_box:
+                self.data['boxes']["box_{}".format(box_num)] = {
+                    "name": "Docker Services",
+                    "size": "small",
+                    "port_view": "column" if num_of_boxes <=4 else "name",
+                    "includes": services_in_box
+                }
+                if num_of_boxes <= 2:
+                    self.data['boxes']["box_{}".format(box_num)]['show_revision'] = True
 
 
 class Compose(ConfigTemplate):
@@ -302,7 +314,6 @@ class Compose(ConfigTemplate):
 
     def _check(self) -> bool:
         """
-        TODO: Validate docker-compose yaml files.
         :return:
             bool
         """

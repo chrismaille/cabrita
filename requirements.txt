@@ -1,7 +1,6 @@
 alabaster==0.7.10
 Babel==2.5.3
 backcall==0.1.0
-backtrace==0.2.1
 blessed==1.14.2
 buzio==1.1.2
 certifi==2018.1.18
@@ -26,7 +25,6 @@ packaging==17.1
 parso==0.1.1
 pexpect==4.4.0
 pickleshare==0.7.4
-pkg-resources==0.0.0
 pkginfo==1.4.2
 prompt-toolkit==1.0.15
 psutil==5.4.4

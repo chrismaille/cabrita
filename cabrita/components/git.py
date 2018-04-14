@@ -38,12 +38,16 @@ class GitInspect(InspectTemplate):
         if not git_hash and git_tag:
             git_status = "--"
         else:
-            git_status = "{}@{}".format(git_tag.replace('\n', ''),
-                                        git_hash.replace('\n', '')) if git_tag else git_hash.replace('\n', '')
+            git_status = u"✎ {}@⑂ {}".format(
+                git_tag.replace('\n', '')[:10],
+                git_hash.replace('\n', '')
+            ) if git_tag else u"⑂ {}".format(git_hash.replace('\n', ''))
         return git_status
 
 
     def get_git_revision(self, service):
+        if self.compose.is_image(service):
+            return "-"
         path = self.compose.get_build_path(service)
         return self.get_git_revision_from_path(path)
 

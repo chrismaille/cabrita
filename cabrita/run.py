@@ -1,7 +1,6 @@
 """Cabrita main module."""
 import sys
 
-import backtrace
 import click
 from cabrita import __version__
 from buzio import console
@@ -15,10 +14,15 @@ from cabrita.versions import check_version
 @click.option(
     '--path',
     envvar="CABRITA_PATH",
-    prompt='Inform full path to config file',
+    default=None,
     help='Full path for configuration file.',
     type=click.Path())
-def run(path):
+@click.argument(
+    'compose_path',
+    type=click.Path(exists=True),
+    nargs=-1
+)
+def run(path, compose_path):
     """Run main command for cabrita.
 
     1. Check version
@@ -29,9 +33,10 @@ def run(path):
         print("")
         console.box("Cabrita v{}".format(__version__))
         version = check_version()
-        console.info("Loading Configuration...")
+        if path:
+            console.info("Loading Configuration...")
         dashboard = DashboardCommand()
-        dashboard.add_config(path)
+        dashboard.add_config(path, compose_path)
         if not dashboard.config.is_valid:
             sys.exit(1)
         dashboard.add_compose()
@@ -41,15 +46,12 @@ def run(path):
             dashboard.execute()
         else:
             sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(0)
     except Exception:
         client = get_sentry_client()
         if client:
             client.captureException()
-
-        backtrace.hook(
-            reverse=False,
-            align=True
-        )
         raise
 
 

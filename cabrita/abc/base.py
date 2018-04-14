@@ -17,12 +17,13 @@ class ConfigTemplate(ABC):
     """
 
     def __init__(self) -> None:
-        self.compose_list = []
+        self.compose_data_list = []
         self._base_path = None
         self.list_path = []
         self.full_path = None
         self.data = {}
         self.console = console
+        self.manual_compose_paths = []
 
     @property
     def base_path(self):
@@ -33,8 +34,8 @@ class ConfigTemplate(ABC):
         self._base_path = value if "$" not in value else get_path(value, "")
 
     @property
-    def version(self) -> str:
-        return self.data['version']
+    def version(self) -> int:
+        return int(self.data.get("version", 0))
 
     @property
     @abstractmethod
@@ -42,30 +43,32 @@ class ConfigTemplate(ABC):
         pass
 
     def add_path(self, path: str, base_path: str = os.getcwd()) -> None:
-        if not self.base_path:
-            self.base_path = base_path
-        self.list_path.append((path, base_path))
+        if path:
+            if not self.base_path:
+                self.base_path = base_path
+            self.list_path.append((path, base_path))
 
     def load_data(self) -> None:
-        for path, base_path in self.list_path:
-            try:
-                self.full_path = get_path(path, base_path)
-                self.console.info("Reading {}".format(self.full_path))
-                with open(self.full_path, 'r') as file:
-                    self.compose_list.append(yaml.load(file.read()))
-            except IOError as exc:
-                console.error("Cannot open file: {}".format(exc))
-                sys.exit(1)
-            except yaml.YAMLError as exc:
-                console.error("Cannot read file: {}".format(exc))
-                sys.exit(1)
-            except Exception as exc:
-                console.error("Error: {}".format(exc))
-                raise exc
-        self._upload_compose_list()
+        if self.list_path:
+            for path, base_path in self.list_path:
+                try:
+                    self.full_path = get_path(path, base_path)
+                    self.console.info("Reading {}".format(self.full_path))
+                    with open(self.full_path, 'r') as file:
+                        self.compose_data_list.append(yaml.load(file.read()))
+                except IOError as exc:
+                    console.error("Cannot open file: {}".format(exc))
+                    sys.exit(1)
+                except yaml.YAMLError as exc:
+                    console.error("Cannot read file: {}".format(exc))
+                    sys.exit(1)
+                except Exception as exc:
+                    console.error("Error: {}".format(exc))
+                    raise exc
+            self._upload_compose_list()
 
     def _upload_compose_list(self):
-        reversed_list = list(reversed(self.compose_list))
+        reversed_list = list(reversed(self.compose_data_list))
         self.data = reversed_list[-1]
         for index, override in enumerate(reversed_list):
             self.override = override

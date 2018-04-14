@@ -76,6 +76,11 @@ class UserWatch(Watch):
 
     def _execute(self):
 
+        if not self.file and not self.ping:
+            self._widget = dashing.Text("No Watchers configured.", color=6, border_color=5, background_color=self.background_color,
+                                        title="Watchers")
+            return
+
         for watch in self.file:
             self._execute_watch('file', watch)
 
