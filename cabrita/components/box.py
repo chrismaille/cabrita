@@ -33,6 +33,7 @@ class Box:
         self.git = git
         self.docker = docker
         self.background_color = background_color
+        self._services = []
         self._widget = dashing.Text("Fetching data...", color=6, border_color=5,
                                     background_color=background_color.value)
 

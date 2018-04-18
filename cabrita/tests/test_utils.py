@@ -1,15 +1,34 @@
-from unittest import TestCase
+import os
+from pathlib import Path
+from unittest import TestCase, mock
 
 
 class TestUtils(TestCase):
-    def test_run_command(self):
-        self.fail()
+
+    @mock.patch('cabrita.abc.utils.subprocess.call', return_value=0)
+    def test_run_command(self, mock):
+        from cabrita.abc.utils import run_command
+
+        test_result = run_command(
+            'cd $HOME && ls'
+        )
+        assert test_result is True
 
     def test_get_sentry_client(self):
-        self.fail()
+        from cabrita.abc.utils import get_sentry_client
+
+        os.environ['CABRITA_SENTRY_DSN'] = "http://1234:5678@sentry.local:80/1"
+        test_client = get_sentry_client()
+        assert test_client is not None
 
     def test_get_path(self):
-        self.fail()
+        from cabrita.abc.utils import get_path
+
+        test_path = get_path("$HOME", "")
+        assert test_path == str(Path.home())
 
     def test_format_color(self):
-        self.fail()
+        from cabrita.abc.utils import format_color
+
+        test_text = format_color("Hello World", "warning")
+        self.assertEqual(test_text, "\x1b[33mHello World\x1b[22m")
