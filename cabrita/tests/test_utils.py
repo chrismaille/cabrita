@@ -6,13 +6,23 @@ from unittest import TestCase, mock
 class TestUtils(TestCase):
 
     @mock.patch('cabrita.abc.utils.subprocess.call', return_value=0)
-    def test_run_command(self, mock):
+    def test_run_command(self, *args):
         from cabrita.abc.utils import run_command
 
         test_result = run_command(
             'cd $HOME && ls'
         )
         assert test_result is True
+
+    def test_real_run_command(self):
+        from cabrita.abc.utils import run_command
+
+        test_result = run_command(
+            'cd $HOME && ls',
+            get_stdout=True
+        )
+        assert test_result is not ""
+        assert isinstance(test_result, str)
 
     def test_get_sentry_client(self):
         from cabrita.abc.utils import get_sentry_client

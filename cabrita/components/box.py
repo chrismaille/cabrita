@@ -34,6 +34,7 @@ class Box:
         self.docker = docker
         self.background_color = background_color
         self._services = []
+        self.data_inspected_from_service = {}
         self._widget = dashing.Text("Fetching data...", color=6, border_color=5,
                                     background_color=background_color.value)
 
@@ -124,17 +125,27 @@ class Box:
             table_header += self.categories
         return table_header
 
-    def _add_ports(self, value) -> str:
-        if not self.service_data['ports']:
-            return self.service_data[value]
+    def _append_ports_in_field(self, field) -> str:
+        """
+        Append port info in field or just return field value.
+        :param field: str
+            name field to append port info ('name' or 'status')
+        :return:
+            field value with or without port info (str)
+        """
+        if not self.data_inspected_from_service['ports']:
+            return self.data_inspected_from_service[field]
 
-        if self.service_data['status'].lower() in ["exited", "error", "not found", "need build"]:
-            return self.service_data[value] if value != "ports" else ""
+        if self.data_inspected_from_service['status'].lower() in ["exited", "error", "not found", "need build"]:
+            return self.data_inspected_from_service[field] if field != "ports" else ""
 
-        if self.port_detail != value:
-            return self.service_data[value]
+        if self.port_view == PortView.column:
+            return self.data_inspected_from_service[field]
 
-        return "{} ({})".format(self.service_data[value], self.service_data["ports"])
+        if field != self.port_view.value:
+            return self.data_inspected_from_service[field]
+        else:
+            return "{} ({})".format(self.data_inspected_from_service[field], self.data_inspected_from_service["ports"])
 
     def run(self) -> None:
         # Define Headers
@@ -158,22 +169,22 @@ class Box:
             if main_category:
                 striped_name = service.replace(main_category, "").replace("-", "").replace("_", "")
 
-            self.service_data = self.docker.status(service)
+            self.data_inspected_from_service = self.docker.status(service)
 
-            service_name = self._add_ports("name")
-            service_status = self._add_ports("status")
+            service_name = self._append_ports_in_field("name")
+            service_status = self._append_ports_in_field("status")
 
             table_data = [
-                format_color(service_name, self.service_data['style'], self.service_data['theme']),
-                format_color(service_status, self.service_data['style'], self.service_data['theme'])
+                format_color(service_name, self.data_inspected_from_service['style'], self.data_inspected_from_service['theme']),
+                format_color(service_status, self.data_inspected_from_service['style'], self.data_inspected_from_service['theme'])
             ]
 
             if self.show_revision:
                 table_data.append(self.git.get_git_revision(service))
 
             if self.port_view == PortView.column:
-                port_string = "" if not self.service_data['ports'] else self._add_ports("ports")
-                table_data.append(format_color(port_string, self.service_data['style'], self.service_data['theme']))
+                port_string = "" if not self.data_inspected_from_service['ports'] else self._append_ports_in_field("ports")
+                table_data.append(format_color(port_string, self.data_inspected_from_service['style'], self.data_inspected_from_service['theme']))
 
             if self.show_git:
                 table_data.append(self.git.status(service))
