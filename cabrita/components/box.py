@@ -220,7 +220,7 @@ class Box:
         else:
             return None
 
-    def format_revision(self, table_lines):
+    def format_revision(self, table_lines: list) -> list:
 
         largest_tag = max([
             len(line[2].split("@")[0] if "@" in line[2] else "")

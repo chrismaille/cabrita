@@ -1,10 +1,12 @@
 from unittest import TestCase, mock
 
+import yaml
 from dashing import dashing
 
 from cabrita.components import BoxColor
-from cabrita.components.box import Box
+from cabrita.components.box import Box, update_box
 from cabrita.components.docker import PortView
+from cabrita.tests import COMPOSE_YAML
 
 
 class TestBox(TestCase):
@@ -31,7 +33,7 @@ class TestBox(TestCase):
     def return_revision_status(self, service):
         mock_dict = {
             'django': u"✎ 1.0.0@⑂ abcd12345",
-            'django-worker': '--'
+            'django-worker': 'Using Image'
         }
         return mock_dict[service]
 
@@ -46,16 +48,19 @@ class TestBox(TestCase):
     @mock.patch('cabrita.components.git.GitInspect')
     @mock.patch('cabrita.components.docker.DockerInspect')
     def setUp(self, *args):
+        compose_mock = args[2]
+        compose_data = yaml.load(COMPOSE_YAML)
+        compose_mock.services = compose_data['services']
 
         docker_mock = args[0]
-        docker_mock.status.side_effect = self.return_docker_status
+        docker_mock.status = self.return_docker_status
 
         git_mock = args[1]
-        git_mock.get_git_revision.return_value = self.return_revision_status
-        git_mock.status.return_value = self.return_git_status
+        git_mock.get_git_revision = self.return_revision_status
+        git_mock.status = self.return_git_status
 
         self.box = Box(
-            compose=args[2],
+            compose=compose_mock,
             git=git_mock,
             docker=docker_mock,
             background_color=BoxColor.black
@@ -85,12 +90,12 @@ class TestBox(TestCase):
 
     def test_show_revision(self):
         assert isinstance(self.box.show_revision, bool)
-        assert self.box.show_revision is False
+        assert self.box.show_revision is True
 
     def test_port_view(self):
         from cabrita.components.docker import PortView
 
-        assert self.box.port_view is PortView.hidden
+        assert self.box.port_view is PortView.column
 
     def test_port_detail(self):
         from cabrita.components.docker import PortDetail
@@ -120,39 +125,52 @@ class TestBox(TestCase):
         assert self.box.show_revision is True
 
     def test_add_service(self):
-        self.box.add_service('django')
-        assert len(self.box.services) == 1
+        self.box.add_service('pyramid')
+        assert len(self.box.services) == 3
 
     def test__get_headers(self):
         test_headers = self.box._get_headers()
         self.assertEqual(test_headers, ['Service', 'Status', 'Revision', 'Port', 'Git', 'Worker'])
 
     def test__append_ports_in_field(self):
+        self.box.run()
         self.box.data['port_view'] = PortView.name
         test_name = self.box._append_ports_in_field('name')
         test_status = self.box._append_ports_in_field('status')
-        self.assertEqual(test_name, u"django (↘ 8081)")
+        self.assertEqual(test_name, u"django-worker (↘ 8085)")
         self.assertEqual(test_status, "Running")
 
         self.box.data['port_view'] = PortView.status
         test_name = self.box._append_ports_in_field('name')
         test_status = self.box._append_ports_in_field('status')
-        self.assertEqual(test_name, "django")
-        self.assertEqual(test_status, u"Running (↘ 8081)")
-
+        self.assertEqual(test_name, "django-worker")
+        self.assertEqual(test_status, u"Running (↘ 8085)")
 
     def test_run(self):
-        test_result = "data"
+        test_result = \
+            "Service        Status    Revision      Port    Git          Worker\n" \
+            "-------------  --------  ------------  ------  -----------  --------\n" \
+            "[32mdjango-worker[22m  [32mRunning[22m   [36m " \
+            "[22m[37m[2mUsing Image[22m  [32m↘ 8085[22m  Using Image  [32mRunning[22m"
         self.box.run()
-        self.assertEqual(self.box.widget, test_result)
+        self.assertEqual(self.box.widget.text, test_result)
 
     def test__get_service_category_data(self):
-        self.fail()
+        self.box.run()
+        ret = self.box._get_service_category_data('django', 'worker')
+        self.assertEqual(ret, self.return_docker_status('django-worker'))
 
     def test_format_revision(self):
-        self.fail()
+        self.box.run()
+        revision_data = self.return_revision_status('django')
+        table_lines = [
+            ['django', 'running', revision_data],
+            ['dummy', 'running', u"✎ very_long_tag_line@⑂ abcd12345"]
+        ]
+        test_data = self.box.format_revision(table_lines)
+        self.assertEqual(test_data[0][-1], '[36m✎ 1.0.0              [22m[37m[2m⑂ abcd12345[22m')
 
-
-class TestUpdate_box(TestCase):
-    def test_update_box(self):
-        self.fail()
+    @mock.patch('cabrita.abc.utils.get_sentry_client')
+    def test_update_box(self, *args):
+        ret = update_box(self.box)
+        self.assertIsInstance(ret, dashing.Text)
