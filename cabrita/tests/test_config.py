@@ -1,7 +1,19 @@
 from unittest import TestCase
 
+from cabrita.components.config import Config
+
 
 class TestConfig(TestCase):
+
+    def setUp(self):
+        self.config = Config()
+
+    def _generate_config_v1(self):
+        pass
+
+    def _generate_config_v2(self):
+        pass
+
     def test_ignore_services(self):
         self.fail()
 

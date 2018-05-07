@@ -6,7 +6,6 @@ from dashing import dashing
 from cabrita.components import BoxColor
 from cabrita.components.box import Box, update_box
 from cabrita.components.docker import PortView
-from cabrita.tests import COMPOSE_YAML
 
 
 class TestBox(TestCase):
@@ -49,7 +48,8 @@ class TestBox(TestCase):
     @mock.patch('cabrita.components.docker.DockerInspect')
     def setUp(self, *args):
         compose_mock = args[2]
-        compose_data = yaml.load(COMPOSE_YAML)
+        with open("./examples/docker-compose.yml") as file:
+            compose_data = yaml.load(file.read())
         compose_mock.services = compose_data['services']
 
         docker_mock = args[0]

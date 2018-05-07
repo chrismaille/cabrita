@@ -1,18 +1,113 @@
 import os
+import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-import yaml
-
 from cabrita.components.config import Compose
-from cabrita.tests import COMPOSE_YAML
 
 
 class TestCompose(TestCase):
 
     def setUp(self):
+        self.maxDiff = None
+        self._generate_compose()
+
+    def _generate_compose(self):
         self.compose = Compose()
-        self.compose.data = yaml.load(COMPOSE_YAML)
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = Path(current_dir).parent
+        self.compose.base_path = os.path.join(parent_dir, 'examples')
+        self.compose.add_path("./examples/docker-compose.yml")
+        self.compose.add_path("./examples/docker-compose.override.yml")
+        self.compose.load_data()
+        result_dict = {
+            'version': '3',
+            'services': {
+                'django': {
+                    'build': {
+                        'context': './django_app',
+                        'dockerfile': 'Dockerfile_dev'
+                    },
+                    'image': 'django:dev',
+                    'ports': ['8081:8080', '8090:8080'],
+                    'depends_on': ['postgres', 'redis'],
+                    'command': 'bash -c "python manage.py runserver 0.0.0.0:8080"',
+                    'environment': {
+                        'DEBUG': "True"
+                    },
+                    'networks': {
+                        'backend': {
+                            'aliases': ['django']
+                        }
+                    },
+                    'volumes': ['./django_app:/opt/app']
+                },
+                'django-worker': {
+                    'image': 'django:dev',
+                    'ports': ['8085:8080'],
+                    'depends_on': ['django', 'redis', 'postgres'],
+                    'volumes': ['${TEST_PROJECT_PATH}/django_app:/opt/app'],
+                    'networks': {
+                        'backend': {
+                            'aliases': ['django-worker']
+                        }
+                    }
+                },
+                'flask': {
+                    'build': {
+                        'context': './flask_app'
+                    },
+                    'image': 'flask:dev',
+                    'ports': ['5010:5000'],
+                    'depends_on': ['postgres'],
+                    'volumes': ['./flask_app:/opt/app'],
+                    'networks': {
+                        'backend': {
+                            'aliases': ['flask']
+                        }
+                    }
+                },
+                'portainer': {
+                    'image': 'portainer/portainer',
+                    'ports': ['9100:9000'],
+                    'volumes': ['/var/run/docker.sock:/var/run/docker.sock'],
+                    'networks': {
+                        'backend': {
+                            'aliases': ['portainer']
+                        }
+                    }
+                },
+                'redis': {
+                    'image': 'redis:latest',
+                    'ports': ['6380:6379'],
+                    'networks': {
+                        'backend': {
+                            'aliases': ['redis']
+                        }
+                    }
+                },
+                'postgres': {
+                    'image': 'postgres:9.6',
+                    'volumes': ['postgres-app-data:/var/lib/postgresql/data'],
+                    'ports': ['5433:5432'],
+                    'networks': {
+                        'backend': {
+                            'aliases': ['postgres']
+                        }
+                    }
+                }
+            },
+            'networks': {
+                'backend': {
+                    'driver': 'bridge'
+                }
+            },
+            'volumes': {
+                'postgres-app-data': None
+            }
+        }
+        self.assertDictEqual(self.compose.data, result_dict)
 
     def test_services(self):
         compose_list = [
@@ -20,10 +115,10 @@ class TestCompose(TestCase):
             for key in self.compose.services
             if isinstance(self.compose.services[key], dict)
         ]
-        self.assertTrue(compose_list == ['django', 'django-worker', 'postgres'])
+        self.assertEqual(compose_list, ['django', 'django-worker', 'portainer', 'redis', 'postgres', 'flask'])
 
     def test_volumes(self):
-        self.assertDictEqual(self.compose.volumes, {'postgres-data': None})
+        self.assertDictEqual(self.compose.volumes, {'postgres-app-data': None})
 
     def test_networks(self):
         self.assertDictEqual(self.compose.networks, {'backend': {'driver': 'bridge'}})
@@ -39,10 +134,11 @@ class TestCompose(TestCase):
 
     def test_get_build_path(self):
         full_path = self.compose.get_build_path('django')
-        self.assertEqual(full_path, os.path.join(Path.home(), 'Projects'))
+        self.assertEqual(
+            full_path,
+            os.path.join(self.compose.base_path, 'django_app')
+        )
 
     def test_get_from_service(self):
-        environment_list = self.compose.get_from_service('django', 'environment')
-        self.assertEqual(environment_list[0].split("=")[0], 'DEBUG')
-
-
+        environment_dict = self.compose.get_from_service('django', 'environment')
+        self.assertDictEqual(environment_dict, {"DEBUG": "True"})

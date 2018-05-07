@@ -1,0 +1,32 @@
+version: "3"
+services:
+  django:
+    build:
+      dockerfile: Dockerfile_dev
+    depends_on:
+      - postgres
+      - redis
+    command: bash -c "python manage.py runserver 0.0.0.0:8080"
+    environment:
+      DEBUG: "True"
+    ports:
+      - "8090:8080"
+  django-worker:
+    depends_on:
+      - postgres
+  flask:
+    build:
+      context: ./flask_app
+    image: "flask:dev"
+    ports:
+      - "5010:5000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./flask_app:/opt/app
+    environment:
+      - FLASK_APP=app.py
+    networks:
+      backend:
+        aliases:
+          - flask

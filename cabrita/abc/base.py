@@ -1,20 +1,22 @@
 import os
-from typing import Union
-
-import yaml
 import sys
 from abc import ABC, abstractmethod
-from cabrita.abc.utils import run_command
-from buzio import console
+from collections import Hashable
 from datetime import datetime, timedelta
+from typing import Union, Dict, List, Any
+
+import yaml
+from buzio import console
 
 from cabrita.abc.utils import get_path
+from cabrita.abc.utils import run_command
 
 
 class ConfigTemplate(ABC):
     """
     Abstract class for processing yaml files.
     """
+    compose_data = Union[Union[Dict[Hashable, Any], List[Any], None], Any]
 
     def __init__(self) -> None:
         self.compose_data_list = []
@@ -55,7 +57,10 @@ class ConfigTemplate(ABC):
                     self.full_path = get_path(path, base_path)
                     self.console.info("Reading {}".format(self.full_path))
                     with open(self.full_path, 'r') as file:
-                        self.compose_data_list.append(yaml.load(file.read()))
+                        self.compose_data = yaml.load(file.read())
+                        for key in self.compose_data:
+                            self._convert_lists(self.compose_data, key)
+                        self.compose_data_list.append(self.compose_data)
                 except IOError as exc:
                     console.error("Cannot open file: {}".format(exc))
                     sys.exit(1)
@@ -67,6 +72,13 @@ class ConfigTemplate(ABC):
                     raise exc
             self._upload_compose_list()
 
+    def _convert_lists(self, data, key):
+        if isinstance(data[key], list) and "=" in data[key][0]:
+            data[key] = {obj.split("=")[0]: obj.split("=")[-1] for obj in data[key]}
+        if isinstance(data[key], dict):
+            for k in data[key]:
+                self._convert_lists(data[key], k)
+
     def _upload_compose_list(self):
         reversed_list = list(reversed(self.compose_data_list))
         self.data = reversed_list[-1]
@@ -76,7 +88,6 @@ class ConfigTemplate(ABC):
                 break
             for key in self.override:
                 self._load_data_from_override(self.override, self.data, key)
-
 
     def _load_data_from_override(self, source, target, key):
         """Append override data in self.compose.
@@ -89,6 +100,8 @@ class ConfigTemplate(ABC):
                 image: core
                 networks:
                     - backend
+                environment:
+                    - DEBUG=false
                 ports:
                  - "8080:80"
 
@@ -100,6 +113,8 @@ class ConfigTemplate(ABC):
                 depends_on:
                     - api
                 command: bash -c "python manage.py runserver 0.0.0.0"
+                environment:
+                    DEBUG: "True"
                 ports:
                     - "9000:80"
 
@@ -113,9 +128,12 @@ class ConfigTemplate(ABC):
                     - api
                 image: core
                 command: bash -c "python manage.py runserver 0.0.0.0"
+                environment:
+                    DEBUG: "True"
                 networks:
                     - backend
                 ports:
+                 - "8080:80"
                  - "9000:80"
 
         """
@@ -128,9 +146,15 @@ class ConfigTemplate(ABC):
                         key=k
                     )
             else:
-                target[key] = source[key]
+                if isinstance(target[key], list) and isinstance(source[key], list):
+                    target[key] += source[key]
+                else:
+                    target[key] = source[key]
         else:
-            target[key] = source[key]
+            if isinstance(target, list) and isinstance(source[key], list):
+                target[key] += source[key]
+            else:
+                target[key] = source[key]
 
 
 class InspectTemplate(ABC):
