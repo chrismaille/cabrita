@@ -66,7 +66,8 @@ class TestCompose(TestCase):
                         'backend': {
                             'aliases': ['flask']
                         }
-                    }
+                    },
+                    'environment': {'FLASK_APP': 'app.py'}
                 },
                 'portainer': {
                     'image': 'portainer/portainer',
