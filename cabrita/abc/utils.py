@@ -1,3 +1,13 @@
+"""Base utils module.
+
+Functions
+---------
+    get_sentry_client: Return Sentry client
+    run_command: Run subprocess calls
+    get_path: Resolve relative paths
+    format_color: Abstract buzio formatStr method
+
+"""
 import os
 import re
 import subprocess
@@ -9,6 +19,7 @@ from raven.transport.requests import RequestsHTTPTransport
 
 
 def get_sentry_client() -> Optional[Client]:
+    """Return synchronous Sentry client if DSN is available."""
     return Client(os.getenv('CABRITA_SENTRY_DSN'), transport=RequestsHTTPTransport) if os.getenv(
         'CABRITA_SENTRY_DSN') else None
 
@@ -49,7 +60,7 @@ def run_command(
             return False
     except KeyboardInterrupt:
         raise KeyboardInterrupt
-    except BaseException:
+    except Exception:
         return False
 
     return True if not get_stdout else ret.decode('utf-8')
@@ -86,6 +97,6 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
 
 
 def format_color(text: str, style: str, theme: str = None) -> str:
+    """Format string with color using formatStr method."""
     func = getattr(formatStr, style)
     return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)
-

@@ -101,5 +101,4 @@ ENV/
 # mypy
 .mypy_cache/
 .idea
-cabrita*.yml
 db.sqlite*

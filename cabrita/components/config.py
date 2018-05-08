@@ -42,10 +42,6 @@ class Config(ConfigTemplate):
         return self.background_color.value
 
     @property
-    def interval(self) -> int:
-        return int(self.data['interval'])
-
-    @property
     def watchers(self) -> dict:
         return self.data.get('watchers', {})
 
