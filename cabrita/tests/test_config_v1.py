@@ -9,26 +9,25 @@ class TestConfig(TestCase):
 
     def setUp(self):
         self.maxDiff = None
-        self.manual_files = [
-            './examples/docker-compose.yml',
-            './examples/docker-compose.override.yml'
-        ]
         self._generate_config()
 
     def _generate_config(self):
         self.config = Config()
-        self.config.manual_compose_paths = self.manual_files
+        self.config.add_path('./examples/config/cabrita-v1.yml')
         self.config.load_data()
         self.assertTrue(self.config.is_valid)
 
     def test_ignore_services(self):
-        self.assertEqual(self.config.ignore_services, [])
+        self.assertEqual(self.config.ignore_services, ['portainer'])
 
     def test_compose_files(self):
-        self.assertEqual(self.config.compose_files, self.manual_files)
+        self.assertEqual(self.config.compose_files, ['$TEST_PROJECT_PATH/docker-compose.yml'])
 
     def test_layout(self):
         self.assertEqual(self.config.layout, 'horizontal')
+
+    def test_boxes(self):
+        self.assertEqual(list(self.config.boxes.keys()), ['all', 'workers', 'devops'])
 
     def test_title(self):
         self.assertEqual(self.config.title, "Docker-Compose")
@@ -40,12 +39,16 @@ class TestConfig(TestCase):
     def test_background_color_value(self):
         self.assertEqual(self.config.background_color_value, 16)
 
+    def test_watchers(self):
+        pass
+
     def test_get_compose_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = Path(current_dir).parent
+        os.environ['TEST_PROJECT_PATH'] = str(parent_dir)
         self.assertEqual(
-            Path(self.config.get_compose_path(self.manual_files[0], parent_dir)),
-            Path(os.path.join(parent_dir, self.manual_files[0])).resolve()
+            Path(self.config.get_compose_path('$TEST_PROJECT_PATH/docker-compose.yml', parent_dir)),
+            Path(os.path.join(parent_dir, 'docker-compose.yml')).resolve()
         )
 
     def test_generate_boxes(self):
