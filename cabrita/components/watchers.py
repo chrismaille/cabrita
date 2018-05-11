@@ -29,6 +29,7 @@ class Watch(Box):
         if not self.can_update:
             return
         self._execute()
+        self.last_update = datetime.now()
 
 
 class DockerComposeWatch(Watch):
@@ -46,10 +47,14 @@ class DockerComposeWatch(Watch):
             full_path = self.config.get_compose_path(file, os.path.dirname(file))
             path = os.path.dirname(full_path)
             filename = os.path.splitext(os.path.basename(full_path))[0]
-            git_revision = self.git.get_git_revision_from_path(path)
-            git_state = self.git.get_behind_state(path)
+            if self.git.branch_is_dirty(path):
+                git_state = format_color("BRANCH MODIFIED", 'warning')
+                table_data = [filename, git_state, ""]
+            else:
+                git_state = self.git.get_behind_state(path)
+                git_revision = self.git.get_git_revision_from_path(path, show_branch=True)
+                table_data = [filename, git_state, git_revision]
 
-            table_data = [filename, git_state, git_revision]
             table_lines.append(table_data)
 
         table_lines = self.format_revision(table_lines)
@@ -297,7 +302,7 @@ class SystemWatch(Watch):
                 val=docker_percentage,
                 color=docker_color,
                 border_color=docker_color,
-                title="Docker Space Used:{}Gb of {}Gb used".format(docker_usage, round(total_space - free_space, 1)),
+                title="Docker Used Space:{}Gb of {}Gb used".format(docker_usage, round(total_space - free_space, 1)),
                 background_color=self.background_color
             )
         )

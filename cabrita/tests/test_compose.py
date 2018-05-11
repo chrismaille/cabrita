@@ -16,7 +16,7 @@ class TestCompose(TestCase):
         self.compose = Compose()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = Path(current_dir).parent
+        parent_dir = str(Path(current_dir).parent)
         self.compose.base_path = os.path.join(parent_dir, 'examples')
         self.compose.add_path("./examples/docker-compose.yml")
         self.compose.add_path("./examples/docker-compose.override.yml")
@@ -116,7 +116,9 @@ class TestCompose(TestCase):
             for key in self.compose.services
             if isinstance(self.compose.services[key], dict)
         ]
-        self.assertEqual(compose_list, ['django', 'django-worker', 'portainer', 'redis', 'postgres', 'flask'])
+        self.assertEqual(len(compose_list), 6)
+        for name in compose_list:
+            self.assertTrue(name in ['django', 'django-worker', 'portainer', 'redis', 'postgres', 'flask'])
 
     def test_volumes(self):
         self.assertDictEqual(self.compose.volumes, {'postgres-app-data': None})

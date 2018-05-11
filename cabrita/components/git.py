@@ -22,11 +22,19 @@ class GitInspect(InspectTemplate):
 
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
-        self.modified = False
         self.default_data = ""
 
 
-    def get_git_revision_from_path(self, path):
+    def branch_is_dirty(self, path: str = None) -> bool:
+        if not path:
+            path = self.path
+        branch_is_dirty = self.run(
+            "cd {} && git status --porcelain 2>/dev/null".format(path),
+            get_stdout=True
+        )
+        return True if branch_is_dirty else False
+
+    def get_git_revision_from_path(self, path, show_branch: bool = False):
         git_tag = self.run(
             'cd {} && git describe --tags $(git rev-list --tags --max-count=1 2>/dev/null) 2>/dev/null'.format(path),
             get_stdout=True
@@ -35,13 +43,15 @@ class GitInspect(InspectTemplate):
             'cd {} && git rev-parse --short HEAD 2>/dev/null'.format(path),
             get_stdout=True
         )
+        if show_branch:
+            git_branch = self._get_active_branch(path)
         if not git_hash and git_tag:
             git_status = "--"
         else:
-            git_status = u"✎ {}@⑂ {}".format(
-                git_tag.replace('\n', '')[:10],
-                git_hash.replace('\n', '')
-            ) if git_tag else u"⑂ {}".format(git_hash.replace('\n', ''))
+            git_commit_data = "⑂ {}@{}".format(git_branch, git_hash.replace('\n', '')) if show_branch else \
+                    "⑂ {}".format(git_hash.replace('\n', ''))
+            git_status = u"✎ {} {}".format(
+                git_tag.replace('\n', '')[:10], git_commit_data) if git_tag else git_commit_data
         return git_status
 
 
@@ -72,7 +82,6 @@ class GitInspect(InspectTemplate):
 
 
     def inspect(self, service: str) -> str:
-        self.modified = False
         if self.compose.is_image(service):
             return formatStr.info("Using Image", use_prefix=False)
 
@@ -80,12 +89,6 @@ class GitInspect(InspectTemplate):
         branch = self._get_active_branch()
 
         if branch:
-            branch_is_dirty = self.run(
-                "cd {} && git status --porcelain 2>/dev/null".format(self.path),
-                get_stdout=True
-            )
-            self.modified = True if branch_is_dirty else False
-
             branch_ahead, branch_behind = self._get_modifications_in_branch()
             target_branch_ahead, target_branch_behind = self._get_modifications_in_target_branch(branch)
 
@@ -102,7 +105,7 @@ class GitInspect(InspectTemplate):
                     formatStr.error(" {} {}".format(ARROW_UP, target_branch_ahead),
                                     use_prefix=False) if target_branch_ahead else ""
                 )
-            self._status[service] = formatStr.warning(text, use_prefix=False) if self.modified else formatStr.success(text,
+            self._status[service] = formatStr.warning(text, use_prefix=False) if self.branch_is_dirty() else formatStr.success(text,
                                                                                                              use_prefix=False)
         else:
             self._status[service] = formatStr.error(
@@ -124,9 +127,11 @@ class GitInspect(InspectTemplate):
         branch_behind = self._get_commits(self.path, GitDirection.behind)
         return branch_ahead, branch_behind
 
-    def _get_active_branch(self) -> str:
+    def _get_active_branch(self, path: str = None) -> str:
+        if not path:
+            path = self.path
         branch = self.run(
-            "cd {} && git branch | grep \"*\" 2>/dev/null".format(self.path),
+            "cd {} && git branch | grep \"*\" 2>/dev/null".format(path),
             get_stdout=True
         )
         return branch.replace("* ", "").replace("\n", "") if branch else ""

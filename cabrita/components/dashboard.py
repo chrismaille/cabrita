@@ -2,10 +2,11 @@ import signal
 import sys
 from datetime import datetime
 from multiprocessing.pool import Pool
+from multiprocessing import TimeoutError
 from typing import Union
 
 from blessed import Terminal
-from buzio import console
+from buzio import console, formatStr
 from colorama import Style
 from dashing import dashing
 from dashing.dashing import HSplit, VSplit
@@ -35,7 +36,7 @@ class Dashboard:
     def all_boxes(self) -> list:
         return [self.user_watches, self.compose_watch, self.system_watch] + self.large_boxes + self.small_boxes
 
-    def _log_box(self, box):
+    def _log_box(self, box: Box) -> None:
         log_text = "Box '{}' added.".format(box.title)
         if box.docker.interval > 1:
             log_text += " Inspecting docker containers each {} seconds.".format(box.docker.interval)
@@ -43,16 +44,16 @@ class Dashboard:
             log_text += " Inspecting git repositories each {} seconds.".format(box.git.interval)
         if box.interval > 1:
             log_text += ' Refreshing data each {} seconds.'.format(box.interval)
-        log_text += " Services inside: {}.".format(', '.join(box.services))
+        log_text += " Services: {}.".format(', '.join(box.services))
         console.info(log_text)
 
     def run(self) -> None:
         term = Terminal()
         try:
-            while True:
-                with term.fullscreen():
-                    with term.hidden_cursor():
-                        with term.cbreak():
+            with term.fullscreen():
+                with term.hidden_cursor():
+                    with term.cbreak():
+                        while True:
                             key_pressed = term.inkey(timeout=0)
                             if 'q' in key_pressed.lower():
                                 raise KeyboardInterrupt
@@ -94,11 +95,8 @@ class Dashboard:
             new_widgets = [res.get(30) for res in new_results]
 
             self.user_watches.widget = new_widgets[0]
-            self.user_watches.last_update = datetime.now()
             self.compose_watch.widget = new_widgets[1]
-            self.compose_watch.last_update = datetime.now()
             self.system_watch.widget = new_widgets[2]
-            self.system_watch.last_update = datetime.now()
 
             for index, box in enumerate(boxes_needing_update):
                 if index < 3:
@@ -110,6 +108,9 @@ class Dashboard:
         except KeyboardInterrupt:
             pool.terminate()
             raise
+        except TimeoutError:
+            print(formatStr.error("TIMEOUT DURING REFRESHING DATA..."), file=sys.stderr)
+
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
 

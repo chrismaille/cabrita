@@ -27,7 +27,9 @@ class TestConfig(TestCase):
         self.assertEqual(self.config.layout, 'horizontal')
 
     def test_boxes(self):
-        self.assertEqual(list(self.config.boxes.keys()), ['all', 'workers', 'devops'])
+        self.assertEqual(len(self.config.boxes.keys()), 3)
+        for box_name in self.config.boxes.keys():
+            self.assertTrue(box_name in ['all', 'workers', 'devops'])
 
     def test_title(self):
         self.assertEqual(self.config.title, "Docker-Compose")
@@ -44,11 +46,11 @@ class TestConfig(TestCase):
 
     def test_get_compose_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = Path(current_dir).parent
-        os.environ['TEST_PROJECT_PATH'] = str(parent_dir)
+        parent_dir = str(Path(current_dir).parent.parent)
+        os.environ['TEST_PROJECT_PATH'] = parent_dir
         self.assertEqual(
-            Path(self.config.get_compose_path('$TEST_PROJECT_PATH/docker-compose.yml', parent_dir)),
-            Path(os.path.join(parent_dir, 'docker-compose.yml')).resolve()
+            Path(self.config.get_compose_path('$TEST_PROJECT_PATH/examples/docker-compose.yml', parent_dir)),
+            Path(os.path.join(parent_dir, 'examples/docker-compose.yml')).resolve()
         )
 
     def test_generate_boxes(self):

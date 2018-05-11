@@ -178,22 +178,22 @@ class Config(ConfigTemplate):
                 ret = False
 
         for box_name in self.data.get('boxes', {}):
-            data = self.data['boxes'][box_name]
-            if data.get('size') and data.get('size') not in ['big', 'small']:
+            data_in_box = self.data['boxes'][box_name]
+            if data_in_box.get('size') and data_in_box.get('size') not in ['big', 'small']:
                 self.console.error('Size for Box "{}" must be "big" or "small"'.format(box_name))
                 ret = False
-            if data.get('port_view') and data.get('port_view') not in ['column', 'name', 'status']:
+            if data_in_box.get('port_view') and data_in_box.get('port_view') not in ['column', 'name', 'status']:
                 self.console.error(
-                    'Port View in Box "{}" must be "column", "name" or "status". Value is: {}'.format(box_name, data[
+                    'Port View in Box "{}" must be "column", "name" or "status". Value is: {}'.format(box_name, data_in_box[
                         'port_view']))
                 ret = False
-            if data.get('port_detail') and data.get('port_detail') not in ['external', 'internal', 'both']:
+            if data_in_box.get('port_detail') and data_in_box.get('port_detail') not in ['external', 'internal', 'both']:
                 self.console.error('Port Detail in Box "{}" must be "external", "internal" or "both".'.format(box_name))
                 ret = False
-            if data.get('includes') and data.get('includes') and not isinstance(data.get('includes'), list):
+            if data_in_box.get('includes') and data_in_box.get('includes') and not isinstance(data_in_box.get('includes'), list):
                 self.console.error('Include in Box "{}" must be a list'.format(box_name))
                 ret = False
-            if data.get('categories') and data.get('categories') and not isinstance(data.get('categories'), list):
+            if data_in_box.get('categories') and data_in_box.get('categories') and not isinstance(data_in_box.get('categories'), list):
                 self.console.error('Categories in Box "{}" must be a list'.format(box_name))
                 ret = False
             if self.data.get('watch_for_build_files'):

@@ -42,10 +42,10 @@ class TestConfig(TestCase):
 
     def test_get_compose_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = Path(current_dir).parent
+        parent_dir = Path(current_dir).parent.parent
         self.assertEqual(
-            Path(self.config.get_compose_path(self.manual_files[0], parent_dir)),
-            Path(os.path.join(parent_dir, self.manual_files[0])).resolve()
+            Path(self.config.get_compose_path(self.manual_files[0], str(parent_dir))),
+            Path(os.path.join(str(parent_dir), self.manual_files[0])).resolve()
         )
 
     def test_generate_boxes(self):

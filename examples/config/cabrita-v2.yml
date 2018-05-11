@@ -1,6 +1,7 @@
 version: 2
 layout: horizontal
-background_color: black
+background_color: blue
+title: My Docker Project
 compose_files:
   - $TEST_PROJECT_PATH/docker-compose.yml
   - $TEST_PROJECT_PATH/docker-compose.override.yml
@@ -9,13 +10,11 @@ boxes:
     main: true
     name: Services
     size: big
+    show_revision: true
     watch_branch: origin/staging
     port_view: column
     watch_for_build_using_files:
       - Dockerfile
-      - Dockerfile_dev
-      - requirements.txt
-      - requirements_test.txt
     watch_for_build_using_git:
       - flask
   workers:
@@ -23,10 +22,13 @@ boxes:
     size: big
     show_git: false
     port_view: name
+    includes:
       - worker
       - redis
     categories:
       - Redis
+    watch_for_build_using_files:
+      - Dockerfile
   devops:
     name: Devops
     size: small
@@ -37,6 +39,8 @@ boxes:
 ignore_services:
   - portainer
 watchers:
+  global_success: OK
+  global_error: NEED UPDATE
   ping:
     ngrok:
       name: Ngrok Access
