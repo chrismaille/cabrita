@@ -47,9 +47,9 @@ class TestConfig(TestCase):
     def test_get_compose_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = str(Path(current_dir).parent.parent)
-        os.environ['TEST_PROJECT_PATH'] = parent_dir
+        os.environ['TEST_PROJECT_PATH'] = os.path.join(parent_dir, 'examples')
         self.assertEqual(
-            Path(self.config.get_compose_path('$TEST_PROJECT_PATH/examples/docker-compose.yml', parent_dir)),
+            Path(self.config.get_compose_path('$TEST_PROJECT_PATH/docker-compose.yml', parent_dir)),
             Path(os.path.join(parent_dir, 'examples/docker-compose.yml')).resolve()
         )
 
