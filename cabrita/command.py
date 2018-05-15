@@ -8,16 +8,25 @@ from cabrita.components.git import GitInspect
 from cabrita.components.watchers import DockerComposeWatch, SystemWatch, UserWatch
 
 
-class DashboardCommand:
+class CabritaCommand:
 
-    def add_config(self, path: str, compose_path: tuple) -> None:
-        self.cabrita_path = path
+    def __init__(self, cabrita_path: str, compose_path: tuple, version: str = "dev") -> None:
+        self.version = version
+        self.cabrita_path = cabrita_path
         self.config = Config()
         self.config.add_path(self.cabrita_path)
         self.config.load_data()
         self.config.manual_compose_paths = list(compose_path)
 
-    def add_compose(self) -> None:
+    @property
+    def has_a_valid_config(self) -> bool:
+        return self.config.is_valid
+
+    @property
+    def has_a_valid_compose(self) -> bool:
+        return self.compose.is_valid
+
+    def read_compose_files(self) -> None:
         self.compose = Compose()
         for compose in self.config.compose_files:
             self.compose.add_path(compose, base_path=os.path.dirname(compose))
@@ -90,11 +99,11 @@ class DashboardCommand:
                     main_box.add_service(service)
             self.dashboard.add_box(main_box)
 
-    def execute(self):
+    def prepare_dashboard(self):
         self.dashboard = Dashboard(config=self.config)
         self._add_watchers()
         self._add_services_in_boxes()
+
+    def execute(self):
         self.dashboard.run()
 
-    def add_version(self, version):
-        self.version = version

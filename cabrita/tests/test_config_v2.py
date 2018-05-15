@@ -39,10 +39,10 @@ class TestConfig(TestCase):
 
     def test_background_color(self):
         from cabrita.components import BoxColor
-        self.assertEqual(self.config.background_color, BoxColor.blue)
+        self.assertEqual(self.config.background_color, BoxColor.grey)
 
     def test_background_color_value(self):
-        self.assertEqual(self.config.background_color_value, 4)
+        self.assertEqual(self.config.background_color_value, 0)
 
     def test_watchers(self):
         pass

@@ -1,6 +1,6 @@
 version: 2
 layout: horizontal
-background_color: blue
+background_color: grey
 title: My Docker Project
 compose_files:
   - $TEST_PROJECT_PATH/docker-compose.yml

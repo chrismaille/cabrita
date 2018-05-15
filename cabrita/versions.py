@@ -33,7 +33,7 @@ def versions() -> Optional[List[str]]:
     return versions_list
 
 
-def check_version() -> None:
+def check_version() -> str:
     """Function: check_version.
 
     Summary: Compares actual version vs last known

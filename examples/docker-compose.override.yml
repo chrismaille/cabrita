@@ -6,7 +6,7 @@ services:
     depends_on:
       - postgres
       - redis
-    command: bash -c "python manage.py runserver 0.0.0.0:8080"
+    command: python manage.py runserver 0.0.0.0:8080
     environment:
       DEBUG: "True"
     ports:
@@ -26,6 +26,7 @@ services:
       - ./flask_app:/opt/app
     environment:
       - FLASK_APP=app.py
+      - FLASK_ENV=development
     networks:
       backend:
         aliases:

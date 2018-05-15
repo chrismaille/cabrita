@@ -32,7 +32,7 @@ class TestCompose(TestCase):
                     'image': 'django:dev',
                     'ports': ['8081:8080', '8090:8080'],
                     'depends_on': ['postgres', 'redis'],
-                    'command': 'bash -c "python manage.py runserver 0.0.0.0:8080"',
+                    'command': 'python manage.py runserver 0.0.0.0:8080',
                     'environment': {
                         'DEBUG': "True"
                     },
@@ -48,6 +48,7 @@ class TestCompose(TestCase):
                     'ports': ['8085:8080'],
                     'depends_on': ['django', 'redis', 'postgres'],
                     'volumes': ['${TEST_PROJECT_PATH}/django_app:/opt/app'],
+                    'command': 'celery -A django_app -b redis://redis:6379 worker -l info',
                     'networks': {
                         'backend': {
                             'aliases': ['django-worker']
@@ -67,7 +68,7 @@ class TestCompose(TestCase):
                             'aliases': ['flask']
                         }
                     },
-                    'environment': {'FLASK_APP': 'app.py'}
+                    'environment': {'FLASK_APP': 'app.py', 'FLASK_ENV': 'development'}
                 },
                 'portainer': {
                     'image': 'portainer/portainer',

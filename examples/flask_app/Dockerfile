@@ -1,8 +1,8 @@
 FROM python:latest
 
 WORKDIR /opt/app
-RUN pip install -U pip
-RUN pip install -U Flask
+RUN pip install -U pip Flask
 ADD . .
 
-CMD ['flask', 'run']
+EXPOSE 5000
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

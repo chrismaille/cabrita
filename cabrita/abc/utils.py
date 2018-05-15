@@ -72,10 +72,10 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
     Converts environment variables to path
     Converts relative path to full path
     """
-    if "$" in path:
-        s = re.search(r"\${(\w+)}", path)
+    def _convert_env_to_path(env_in_path):
+        s = re.search(r"\${(\w+)}", env_in_path)
         if not s:
-            s = re.search(r"(\$\w+)", path)
+            s = re.search(r"(\$\w+)", env_in_path)
         if s:
             env = s.group(1).replace("$", "")
             name = os.environ.get(env)
@@ -83,13 +83,19 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
                 raise ValueError("Can't find value for {}".format(env))
             path_list = [
                 part if "$" not in part else name
-                for part in path.split("/")
+                for part in env_in_path.split("/")
             ]
             path = os.path.join(*path_list)
         else:
             raise ValueError(
-                "Cant find path for {}".format(path)
+                "Cant find path for {}".format(env_in_path)
             )
+        return path
+
+    if "$" in base_path:
+        base_path = _convert_env_to_path(base_path)
+    if "$" in path:
+        path = _convert_env_to_path(path)
     if path.startswith("."):
         list_path = os.path.join(base_path, path)
         path = os.path.abspath(list_path)

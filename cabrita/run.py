@@ -6,7 +6,7 @@ from cabrita import __version__
 from buzio import console
 
 from cabrita.abc.utils import get_sentry_client
-from cabrita.command import DashboardCommand
+from cabrita.command import CabritaCommand
 from cabrita.versions import check_version
 
 
@@ -35,15 +35,19 @@ def run(path, compose_path):
         version = check_version()
         if path:
             console.info("Loading Configuration...")
-        dashboard = DashboardCommand()
-        dashboard.add_config(path, compose_path)
-        if not dashboard.config.is_valid:
+        command = CabritaCommand(
+            cabrita_path=path,
+            compose_path=compose_path,
+            version=version
+        )
+        if not command.has_a_valid_config:
             sys.exit(1)
-        dashboard.add_compose()
-        dashboard.add_version(version)
-        if dashboard.compose.is_valid:
+
+        command.read_compose_files()
+        if command.has_a_valid_compose:
             console.success('Configuration complete. Starting dashboard...')
-            dashboard.execute()
+            command.prepare_dashboard()
+            command.execute()
         else:
             sys.exit(1)
     except KeyboardInterrupt:
