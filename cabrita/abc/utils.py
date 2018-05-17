@@ -87,9 +87,7 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
             ]
             path = os.path.join(*path_list)
         else:
-            raise ValueError(
-                "Cant find path for {}".format(env_in_path)
-            )
+            raise ValueError("Cant find path for {}".format(env_in_path))
         return path
 
     if "$" in base_path:

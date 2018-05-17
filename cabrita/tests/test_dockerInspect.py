@@ -2,14 +2,23 @@ import json
 from unittest import TestCase, mock
 
 from cabrita.command import CabritaCommand
-from cabrita.tests import INSPECT_DJANGO_CONTAINER, INSPECT_DJANGO_IMAGE
+from cabrita.tests import INSPECT_DJANGO_CONTAINER, INSPECT_DJANGO_IMAGE, LATEST_CONFIG_PATH
+
+
+def return_run_data(*args, **kwargs):
+    command = args[0]
+    if 'inspect' in command:
+        return INSPECT_DJANGO_IMAGE
+    if 'log' in command:
+        return '2018-05-17 11:03:46 -0300'
+    return False
 
 
 class TestDockerInspect(TestCase):
 
     def setUp(self):
         command = CabritaCommand(
-            cabrita_path='./examples/config/cabrita-v2.yml',
+            cabrita_path=LATEST_CONFIG_PATH,
             compose_path=(),
             version='test'
         )
@@ -17,7 +26,7 @@ class TestDockerInspect(TestCase):
         command.read_compose_files()
         self.assertTrue(command.has_a_valid_compose)
         command.prepare_dashboard()
-        self.docker = command.dashboard.all_boxes[-1].docker
+        self.docker = command.dashboard.all_boxes[3].docker
 
     @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_CONTAINER)
     def test_inspect(self, *mocks):
@@ -59,10 +68,20 @@ class TestDockerInspect(TestCase):
 
     @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_CONTAINER)
     @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_IMAGE)
-    def test__need_build(self, image_mock, container_mock):
+    def test__need_build_using_files(self, image_mock, container_mock):
         service_name = 'django'
         test_name = self.docker._get_container_name(service_name)
         self.docker.run = container_mock
         test_data = self.docker._get_inspect_data(test_name)
         self.docker.run = image_mock
         self.assertFalse(self.docker._need_build(service_name, test_data))
+
+    @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_CONTAINER)
+    @mock.patch('cabrita.abc.utils.run_command', side_effect=return_run_data)
+    def test__need_build_using_git(self, run_mock, container_mock):
+        service_name = 'flask'
+        test_name = self.docker._get_container_name(service_name)
+        self.docker.run = container_mock
+        test_data = self.docker._get_inspect_data(test_name)
+        self.docker.run = run_mock
+        self.assertTrue(self.docker._need_build(service_name, test_data))

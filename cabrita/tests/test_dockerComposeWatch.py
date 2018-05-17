@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from cabrita.components.config import Config
 from cabrita.components.watchers import DockerComposeWatch
+from cabrita.tests import LATEST_CONFIG_PATH
 
 
 class TestDockerComposeWatch(TestCase):
@@ -10,7 +11,7 @@ class TestDockerComposeWatch(TestCase):
     def setUp(self):
         inspector = MagicMock()
         self.config = Config()
-        self.config.add_path('./examples/config/cabrita-v2.yml')
+        self.config.add_path(LATEST_CONFIG_PATH)
         self.config.load_data()
         self.watch = DockerComposeWatch(config=self.config, version=self.config.version, git=inspector,
                                         docker=inspector)

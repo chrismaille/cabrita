@@ -130,7 +130,7 @@ class TestBox(TestCase):
 
     def test__get_headers(self):
         test_headers = self.box._get_headers()
-        self.assertEqual(test_headers, ['Service', 'Status', 'Revision', 'Port', 'Git', 'Worker'])
+        self.assertListEqual(test_headers, ['Service', 'Status', 'Revision', 'Port', 'Git', 'Worker'])
 
     def test__append_ports_in_field(self):
         self.box.run()

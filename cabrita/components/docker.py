@@ -4,7 +4,7 @@ import os
 import re
 import time
 from enum import Enum
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
 from tzlocal import get_localzone
 
@@ -61,7 +61,6 @@ class DockerInspect(InspectTemplate):
         else:
             service_status, text_style, text_theme = self._define_status(inspect_data)
 
-
         self._status[service] = {
             "name": service,
             "status": service_status,
@@ -114,43 +113,31 @@ class DockerInspect(InspectTemplate):
         )
         return json.loads(ret)[0] if ret else {}
 
+    def _get_running_status(self, inspect_state: dict) -> str:
+        if inspect_state.get('Health', False) and \
+                inspect_state['Status'].lower() == 'running':
+            return inspect_state['Health']['Status'].title()
+        return inspect_state['Status'].title()
+
+
+    def _get_style_and_theme_for_status(self, status: str, inspect_state: dict) -> Tuple[str, Union[str, None]]:
+        if not inspect_state['Running'] and not inspect_state['Paused']:
+            return 'info', 'dark'
+        if status.lower() in ['running', 'healthy']:
+            return 'success', None
+        if inspect_state['Health']['FailingStreak'] > 3:
+            return 'error', None
+        else:
+            return 'warning', None
+
+
     def _define_status(self, inspect_data) -> Tuple[str, str, Optional[str]]:
-        theme = None
         if not inspect_data.get('State'):
             return "Error", "error", None
-        if inspect_data['State'].get('Health', False):
-            if inspect_data['State']['Status'].lower() == 'running':
-                stats = inspect_data['State']['Health']['Status'].title()
-            else:
-                stats = inspect_data['State']['Status'].title()
-            if inspect_data['State']['Running']:
-                if inspect_data['State']['Health']['Status'] == 'healthy':
-                    style = "success"
-                else:
-                    if inspect_data['State']['Health']['FailingStreak'] > 3:
-                        style = "error"
-                    else:
-                        style = "warning"
-            elif inspect_data['State']['Paused']:
-                style = "warning"
-            elif not inspect_data['State']['Running']:
-                style = "info"
-                theme = "dark"
-            else:
-                style = "error"
-        else:
-            stats = inspect_data['State']['Status'].title()
-            if inspect_data['State']['Running']:
-                style = "success"
-            elif inspect_data['State']['Paused']:
-                style = "warning"
-            elif not inspect_data['State']['Running']:
-                style = "info"
-                theme = "dark"
-            else:
-                style = "error"
+        status = self._get_running_status(inspect_data['State'])
+        style, theme = self._get_style_and_theme_for_status(status, inspect_data['State'])
 
-        return stats, style, theme
+        return status, style, theme
 
     def _need_build(self, service: str, inspect_data: dict) -> bool:
         test_date = None

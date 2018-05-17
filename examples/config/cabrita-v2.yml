@@ -52,4 +52,4 @@ watchers:
       name: cabrita.yml
       dest_path: $TEST_PROJECT_PATH/config
       source_path: $TEST_PROJECT_PATH
-      source_name: cabrita-v1.yml
+      source_name: cabrita-v2.yml

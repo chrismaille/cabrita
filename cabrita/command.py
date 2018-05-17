@@ -64,8 +64,8 @@ class CabritaCommand:
             docker = DockerInspect(compose=self.compose, interval=box_data.get('interval', 0),
                                    port_view=box_data.get('port_view', PortView.hidden),
                                    port_detail=box_data.get('port_detail', PortDetail.external),
-                                   files_to_watch=box_data.get('watch_for_build_files', []),
-                                   services_to_check_git=box_data.get('watch_for_build_git', []))
+                                   files_to_watch=box_data.get('watch_for_build_using_files', []),
+                                   services_to_check_git=box_data.get('watch_for_build_using_git', []))
             git = GitInspect(
                 target_branch=box_data.get('watch_branch', ""),
                 interval=box_data.get('git_fetch_interval', 30),

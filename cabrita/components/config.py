@@ -26,7 +26,7 @@ class Config(ConfigTemplate):
         return self.data['layout']
 
     @property
-    def boxes(self) -> List[dict]:
+    def boxes(self) -> dict:
         return self.data['boxes']
 
     @property
@@ -149,7 +149,7 @@ class Config(ConfigTemplate):
             ret = False
 
         if self.data.get('background_color') and self.data.get('background_color') not in BoxColor.__members__:
-            self.console.error('Valid background colors are: {}'.format(",".join(BoxColor.__members__)))
+            self.console.error('Valid background colors are: {}'.format(", ".join(sorted(BoxColor.__members__))))
             ret = False
 
         if not self.data.get('compose_files'):
@@ -159,7 +159,7 @@ class Config(ConfigTemplate):
             self.console.error('Docker-Compose files must be a list')
             ret = False
 
-        if self.data.get('ignore_services') and not isinstance(self.data.get('ignore_services'), list):
+        if self.data.get('ignore_services') is not None and not isinstance(self.data.get('ignore_services'), list):
             self.console.error('Ignore Services must be a list')
             ret = False
 
@@ -190,17 +190,17 @@ class Config(ConfigTemplate):
             if data_in_box.get('port_detail') and data_in_box.get('port_detail') not in ['external', 'internal', 'both']:
                 self.console.error('Port Detail in Box "{}" must be "external", "internal" or "both".'.format(box_name))
                 ret = False
-            if data_in_box.get('includes') and data_in_box.get('includes') and not isinstance(data_in_box.get('includes'), list):
+            if data_in_box.get('includes') is not None and not isinstance(data_in_box.get('includes'), list):
                 self.console.error('Include in Box "{}" must be a list'.format(box_name))
                 ret = False
-            if data_in_box.get('categories') and data_in_box.get('categories') and not isinstance(data_in_box.get('categories'), list):
+            if data_in_box.get('categories') is not None and not isinstance(data_in_box.get('categories'), list):
                 self.console.error('Categories in Box "{}" must be a list'.format(box_name))
                 ret = False
-            if self.data.get('watch_for_build_files'):
+            if self.data.get('watch_for_build_using_files') is not None:
                 if not isinstance(self.data.get('watch_for_build_using_files'), list):
                     self.console.error('Watch for Build using Files Check must be a list')
                     ret = False
-            if self.data.get('watch_for_build_git'):
+            if self.data.get('watch_for_build_using_git') is not None:
                 if not isinstance(self.data.get('watch_for_build_using_git'), list):
                     self.console.error('Watch for Build using Git Check must be a list')
                     ret = False
@@ -218,7 +218,7 @@ class Config(ConfigTemplate):
         """
         return get_path(compose_path, base_path)
 
-    def generate_boxes(self, services: list):
+    def generate_boxes(self, services: dict):
 
         service_list = sorted(list(services.keys()))
         self.data['boxes'] = {}

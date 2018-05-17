@@ -8,6 +8,7 @@ from dashing.dashing import Split
 from cabrita.components.box import Box
 from cabrita.components.config import Config
 from cabrita.components.dashboard import Dashboard
+from cabrita.tests import LATEST_CONFIG_PATH
 
 
 class TestDashboard(TestCase):
@@ -15,7 +16,7 @@ class TestDashboard(TestCase):
     def setUp(self):
         self.dummyWatch = Box()
         self.config = Config()
-        self.config.add_path('./examples/config/cabrita-v2.yml')
+        self.config.add_path(LATEST_CONFIG_PATH)
         self.config.load_data()
         self.assertTrue(self.config.is_valid)
         self.dashboard = Dashboard(self.config)
@@ -32,7 +33,7 @@ class TestDashboard(TestCase):
         self.box._services = ["Test App1", "TestApp2"]
 
     def test_all_boxes(self):
-        self.assertEqual(self.dashboard.all_boxes, [self.dummyWatch, self.dummyWatch, self.dummyWatch])
+        self.assertListEqual(self.dashboard.all_boxes, [self.dummyWatch, self.dummyWatch, self.dummyWatch])
 
     def test__log_box(self):
         temporary_stdout = StringIO()

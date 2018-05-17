@@ -18,10 +18,10 @@ class TestConfig(TestCase):
         self.assertTrue(self.config.is_valid)
 
     def test_ignore_services(self):
-        self.assertEqual(self.config.ignore_services, ['portainer'])
+        self.assertListEqual(self.config.ignore_services, ['portainer'])
 
     def test_compose_files(self):
-        self.assertEqual(self.config.compose_files, ['$TEST_PROJECT_PATH/docker-compose.yml'])
+        self.assertListEqual(self.config.compose_files, ['$TEST_PROJECT_PATH/docker-compose.yml'])
 
     def test_layout(self):
         self.assertEqual(self.config.layout, 'horizontal')

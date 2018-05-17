@@ -68,4 +68,25 @@ class TestConfig(TestCase):
             }
         }
         self.config.generate_boxes(services_list)
-        self.assertEqual(self.config.boxes, expected_box)
+        self.assertDictEqual(self.config.boxes, expected_box)
+
+    def test_bad_config(self):
+        self.config = Config()
+        self.config.add_path('./examples/config/cabrita-v2.yml')
+        self.config.load_data()
+        self.config.data['layout'] = 'triangular'
+        self.config.data['background_color'] = 'no_color'
+        self.config.data['compose_files'] = {}
+        self.config.data['boxes'] = {
+            'wrong_box': {
+                'size': 'ultra_large',
+                'port_view': 'wrong_option',
+                'port_detail': 'wrong_option',
+                'watch_for_build_using_files': {},
+                'watch_for_build_using_git': {},
+                'includes': {},
+                'categories': {}
+            }
+        }
+        self.config.data['ignore_services'] = {}
+        self.assertFalse(self.config.is_valid)
