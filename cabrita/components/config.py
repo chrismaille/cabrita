@@ -66,7 +66,8 @@ class Config(ConfigTemplate):
 
     def _check_v1(self, start_here: bool = False) -> bool:
         if start_here:
-            self.console.warning('Version 1 for configuration is outdated. Please update your config file to version 2.')
+            self.console.warning(
+                'Version 1 for configuration is outdated. Please update your config file to version 2.')
 
         if self.manual_compose_paths:
             self.data['compose_files'] = self.manual_compose_paths
@@ -165,17 +166,22 @@ class Config(ConfigTemplate):
 
         if self.data.get('boxes'):
             # Check for more than one main box
-            main_box_count = len([
+            main_box_count = [
                 box_name
                 for box_name in self.data['boxes']
                 if self.data['boxes'].get(box_name).get('main')
-            ])
-            if main_box_count > 1:
+            ]
+            if len(main_box_count) > 1:
                 self.console.error('Only one box must have the "main" parameter')
                 ret = False
-            if main_box_count == 0:
+            if len(main_box_count) == 0:
                 self.console.error('No box have the "main" parameter')
                 ret = False
+            if len(main_box_count) == 1:
+                main_box = self.data['boxes'][main_box_count[0]]
+                if main_box.get('includes') is not None:
+                    self.console.error('Box with "main" parameter must do not contain "includes"')
+                    ret = False
 
         for box_name in self.data.get('boxes', {}):
             data_in_box = self.data['boxes'][box_name]
@@ -184,10 +190,12 @@ class Config(ConfigTemplate):
                 ret = False
             if data_in_box.get('port_view') and data_in_box.get('port_view') not in ['column', 'name', 'status']:
                 self.console.error(
-                    'Port View in Box "{}" must be "column", "name" or "status". Value is: {}'.format(box_name, data_in_box[
-                        'port_view']))
+                    'Port View in Box "{}" must be "column", "name" or "status". Value is: {}'.format(box_name,
+                                                                                                      data_in_box[
+                                                                                                          'port_view']))
                 ret = False
-            if data_in_box.get('port_detail') and data_in_box.get('port_detail') not in ['external', 'internal', 'both']:
+            if data_in_box.get('port_detail') and data_in_box.get('port_detail') not in ['external', 'internal',
+                                                                                         'both']:
                 self.console.error('Port Detail in Box "{}" must be "external", "internal" or "both".'.format(box_name))
                 ret = False
             if data_in_box.get('includes') is not None and not isinstance(data_in_box.get('includes'), list):

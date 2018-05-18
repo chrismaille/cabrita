@@ -65,12 +65,12 @@ PYPI_TEXT = \
         "downloads": -1,
         "filename": "cabrita-1.6.4.tar.gz",
         "has_sig": false,
-        "md5_digest": "adcf8d93980ffd631e6472f9a9037499",
+        "md5_digest": "1234",
         "packagetype": "sdist",
         "python_version": "source",
         "size": 11096,
         "upload_time": "2018-04-11T21:15:31",
-        "url": "https://files.pythonhosted.org/packages/fc/a2/d0e5a6aa66012fc7cf2bb4422af3e10f6290410a3a37fad7f480b2fd1c6b/cabrita-1.6.4.tar.gz"
+        "url": "https://files.pythonhosted.org/packages/fc/a2/1234/cabrita-1.6.4.tar.gz"
       }
     ]
   }
@@ -94,3 +94,13 @@ class TestVersions(TestCase):
         from cabrita.versions import check_version
         result = check_version()
         self.assertEqual(result, u'[31m99.99.99 (update available)[22m')
+
+    @mock.patch('buzio.console.confirm', return_value=True)
+    @mock.patch('buzio.console.run', return_value=True)
+    @mock.patch('cabrita.versions.versions', return_value=['99.99.99'])
+    def test_check_version_with_update(self, *mocks):
+        from cabrita.versions import check_version
+        with self.assertRaises(SystemExit) as cm:
+            check_version()
+
+        self.assertEqual(cm.exception.code, 0)

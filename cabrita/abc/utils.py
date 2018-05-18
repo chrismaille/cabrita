@@ -72,6 +72,7 @@ def get_path(path: str, base_path: str) -> Union[str, ValueError]:
     Converts environment variables to path
     Converts relative path to full path
     """
+
     def _convert_env_to_path(env_in_path):
         s = re.search(r"\${(\w+)}", env_in_path)
         if not s:

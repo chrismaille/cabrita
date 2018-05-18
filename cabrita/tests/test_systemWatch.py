@@ -1,15 +1,17 @@
+from textwrap import dedent
 from unittest import TestCase, mock
 
 from cabrita.command import CabritaCommand
 from cabrita.tests import LATEST_CONFIG_PATH
 
-DOCKER_DF_DATA = \
-"""
-23.87GB
-1.699GB
-16.25GB
-0B
-"""
+DOCKER_DF_DATA = dedent(
+    """
+    23.87GB
+    1.699GB
+    16.25GB
+    0B
+    """)
+
 
 class TestSystemWatch(TestCase):
 

@@ -1,3 +1,14 @@
+"""Components Sub-Package
+
+This package has the cabrita components for:
+
+box = the Box class (the building block for the dashboard)
+config = the Config class (the data from cabrita.yml file)
+dashboard = the Dashboard class (convert boxes to dashing widgets and display it)
+docker = the DockerInspect class (the runner for inspect docker containers)
+git = the GitInspect class (the runner for inspect git data)
+watchers = the Watch class (the collection of internal and user watchers for the dashboard
+"""
 from enum import Enum
 
 

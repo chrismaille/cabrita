@@ -17,3 +17,14 @@ class TestRun(TestCase):
         runner = CliRunner()
         result = runner.invoke(run)
         self.assertEqual(result.exit_code, 0)
+
+    @mock.patch('cabrita.command.CabritaCommand.execute', side_effect=ValueError())
+    @mock.patch('cabrita.run.check_version', return_value="test")
+    @mock.patch('cabrita.run.get_sentry_client')
+    def test_exception_during_run(self, *mocks):
+        from cabrita.run import run
+
+        os.environ['CABRITA_PATH'] = LATEST_CONFIG_PATH
+        runner = CliRunner()
+        with self.assertRaises(ValueError):
+            runner.invoke(run, catch_exceptions=False)

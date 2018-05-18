@@ -1,5 +1,4 @@
-
-LATEST_CONFIG_PATH='./examples/config/cabrita-v2.yml'
+LATEST_CONFIG_PATH = './examples/config/cabrita-v2.yml'
 
 INSPECT_DJANGO_CONTAINER = \
     '''

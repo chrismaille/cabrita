@@ -65,4 +65,4 @@ class TestConfig(TestCase):
             }
         }
         self.config.generate_boxes(services_list)
-        self.assertEqual(self.config.boxes, expected_box)
+        self.assertDictEqual(self.config.boxes, expected_box)

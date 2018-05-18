@@ -1,8 +1,8 @@
 import signal
 import sys
 from datetime import datetime
-from multiprocessing.pool import Pool
 from multiprocessing import TimeoutError
+from multiprocessing.pool import Pool
 from typing import Union
 
 from blessed import Terminal
@@ -109,8 +109,7 @@ class Dashboard:
             pool.terminate()
             raise
         except TimeoutError:
-            print(formatStr.error("TIMEOUT DURING REFRESHING DATA..."), file=sys.stderr)
-
+            print(formatStr.error("TIMEOUT WHILE REFRESHING DATA..."), file=sys.stderr)
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
 

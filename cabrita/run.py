@@ -2,9 +2,9 @@
 import sys
 
 import click
-from cabrita import __version__
 from buzio import console
 
+from cabrita import __version__
 from cabrita.abc.utils import get_sentry_client
 from cabrita.command import CabritaCommand
 from cabrita.versions import check_version
@@ -52,12 +52,11 @@ def run(path, compose_path):
             sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(0)
-    except Exception:
+    except Exception as exc:
         client = get_sentry_client()
         if client:
             client.captureException()
-        raise
-
+        raise exc
 
 
 if __name__ == "__main__":

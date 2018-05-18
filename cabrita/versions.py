@@ -2,10 +2,10 @@
 
 Checks version number for upgrades in PyPI
 """
+import sys
 from typing import Optional, List
 
 import requests
-import sys
 from buzio import console, formatStr
 from pkg_resources import parse_version
 from requests import RequestException
@@ -46,7 +46,7 @@ def check_version() -> str:
         last_version = version_data[-1]
     if parse_version(last_version) > parse_version(__version__) and \
             ("rc" not in last_version and
-                "b" not in last_version and "dev" not in last_version):
+             "b" not in last_version and "dev" not in last_version):
         console.warning(
             "You're running a outdated version.\n" +
             "Last Version: {}\n".format(last_version)

@@ -106,4 +106,3 @@ class CabritaCommand:
 
     def execute(self):
         self.dashboard.run()
-

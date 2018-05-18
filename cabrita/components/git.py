@@ -24,7 +24,6 @@ class GitInspect(InspectTemplate):
         self.target_branch = target_branch
         self.default_data = ""
 
-
     def branch_is_dirty(self, path: str = None) -> bool:
         if not path:
             path = self.path
@@ -49,18 +48,16 @@ class GitInspect(InspectTemplate):
             git_status = "--"
         else:
             git_commit_data = "⑂ {}@{}".format(git_branch, git_hash.replace('\n', '')) if show_branch else \
-                    "⑂ {}".format(git_hash.replace('\n', ''))
+                "⑂ {}".format(git_hash.replace('\n', ''))
             git_status = u"✎ {} {}".format(
                 git_tag.replace('\n', '')[:10], git_commit_data) if git_tag else git_commit_data
         return git_status
-
 
     def get_git_revision(self, service):
         if self.compose.is_image(service):
             return "-"
         path = self.compose.get_build_path(service)
         return self.get_git_revision_from_path(path)
-
 
     def get_behind_state(self, path):
 
@@ -79,7 +76,6 @@ class GitInspect(InspectTemplate):
         else:
             git_state = formatStr.success("OK", use_prefix=False)
         return git_state
-
 
     def inspect(self, service: str) -> str:
         if self.compose.is_image(service):
@@ -105,8 +101,10 @@ class GitInspect(InspectTemplate):
                     formatStr.error(" {} {}".format(ARROW_UP, target_branch_ahead),
                                     use_prefix=False) if target_branch_ahead else ""
                 )
-            self._status[service] = formatStr.warning(text, use_prefix=False) if self.branch_is_dirty() else formatStr.success(text,
-                                                                                                             use_prefix=False)
+            self._status[service] = formatStr.warning(text,
+                                                      use_prefix=False) if self.branch_is_dirty() else formatStr.success(
+                text,
+                use_prefix=False)
         else:
             self._status[service] = formatStr.error(
                 "Branch Not Found",
@@ -135,7 +133,6 @@ class GitInspect(InspectTemplate):
             get_stdout=True
         )
         return branch.replace("* ", "").replace("\n", "") if branch else ""
-
 
     def _get_abbreviate_name(self, full_name) -> str:
         name = full_name.split("/")[-1]

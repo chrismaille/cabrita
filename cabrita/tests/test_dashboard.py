@@ -55,14 +55,12 @@ class TestDashboard(TestCase):
 
         self.assertEqual(assert_exit.exception.code, 0)
 
-
     def test_add_box(self):
         self.dashboard.add_box(self.box)
         self.assertTrue(len(self.dashboard.large_boxes), 1)
 
     @mock.patch('cabrita.components.dashboard.Pool', autospec=True)
     def test__update_boxes(self, *mocks):
-
         self.dashboard._update_boxes()
         self.assertIsInstance(self.dashboard.user_watches.widget, MagicMock)
 

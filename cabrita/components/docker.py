@@ -119,7 +119,6 @@ class DockerInspect(InspectTemplate):
             return inspect_state['Health']['Status'].title()
         return inspect_state['Status'].title()
 
-
     def _get_style_and_theme_for_status(self, status: str, inspect_state: dict) -> Tuple[str, Union[str, None]]:
         if not inspect_state['Running'] and not inspect_state['Paused']:
             return 'info', 'dark'
@@ -129,7 +128,6 @@ class DockerInspect(InspectTemplate):
             return 'error', None
         else:
             return 'warning', None
-
 
     def _define_status(self, inspect_data) -> Tuple[str, str, Optional[str]]:
         if not inspect_data.get('State'):
