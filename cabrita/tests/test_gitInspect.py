@@ -33,17 +33,16 @@ def return_git_result(*args, **kwargs) -> Union[str, bool]:
 
 class TestGitInspect(TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         command = CabritaCommand(
             cabrita_path=LATEST_CONFIG_PATH,
             compose_path=(),
             version='test'
         )
-        self.assertTrue(command.has_a_valid_config)
         command.read_compose_files()
-        self.assertTrue(command.has_a_valid_compose)
         command.prepare_dashboard()
-        self.git = command.dashboard.all_boxes[-1].git
+        cls.git = command.dashboard.all_boxes[-1].git
 
     @mock.patch('cabrita.abc.utils.run_command', side_effect=return_git_result)
     def test_get_git_revision_from_path(self, *mocks):

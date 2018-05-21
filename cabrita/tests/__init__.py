@@ -1,3 +1,9 @@
+"""
+Tests init sub-package.
+
+This subpackage contain all unit tests.
+This file contains mocked data from docker inspect command.
+"""
 LATEST_CONFIG_PATH = './examples/config/cabrita-v2.yml'
 
 INSPECT_DJANGO_CONTAINER = \

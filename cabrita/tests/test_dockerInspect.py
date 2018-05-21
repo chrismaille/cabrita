@@ -16,17 +16,16 @@ def return_run_data(*args, **kwargs):
 
 class TestDockerInspect(TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         command = CabritaCommand(
             cabrita_path=LATEST_CONFIG_PATH,
             compose_path=(),
             version='test'
         )
-        self.assertTrue(command.has_a_valid_config)
         command.read_compose_files()
-        self.assertTrue(command.has_a_valid_compose)
         command.prepare_dashboard()
-        self.docker = command.dashboard.all_boxes[3].docker
+        cls.docker = command.dashboard.all_boxes[3].docker
 
     @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_CONTAINER)
     def test_inspect(self, *mocks):

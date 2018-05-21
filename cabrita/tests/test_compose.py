@@ -126,8 +126,8 @@ class TestCompose(TestCase):
     def test_networks(self):
         self.assertDictEqual(self.compose.networks, {'backend': {'driver': 'bridge'}})
 
-    def test_is_valid(self):
-        self.compose.data = {}
+    def test_compose_list_is_invalid(self):
+        self.compose.list_path = []
         with self.assertRaises(ValueError):
             ret = self.compose.is_valid
 

@@ -15,17 +15,16 @@ DOCKER_DF_DATA = dedent(
 
 class TestSystemWatch(TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         command = CabritaCommand(
             cabrita_path=LATEST_CONFIG_PATH,
             compose_path=(),
             version='test'
         )
-        self.assertTrue(command.has_a_valid_config)
         command.read_compose_files()
-        self.assertTrue(command.has_a_valid_compose)
         command.prepare_dashboard()
-        self.watch = command.dashboard.system_watch
+        cls.watch = command.dashboard.system_watch
 
     @mock.patch('cabrita.components.watchers.run_command', return_value=DOCKER_DF_DATA)
     def test__get_docker_folder_size(self, *mocks):
@@ -36,4 +35,4 @@ class TestSystemWatch(TestCase):
     def test_run(self, *mocks):
         from dashing import dashing
         self.watch.run()
-        self.assertIsInstance(self.watch.widget, dashing.VSplit)
+        self.assertIsInstance(self.watch.widget, dashing.Text)

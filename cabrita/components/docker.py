@@ -1,3 +1,10 @@
+"""
+Docker module.
+
+This module contains the DockerInspect class
+which is responsible to inspect docker data from
+each service in dashboard.
+"""
 import datetime
 import json
 import os
@@ -18,12 +25,36 @@ BOTH = u"⇄"
 
 
 class PortDetail(Enum):
+    """Port Detail for docker ports.
+
+    Ports are determined by the 'ports' and 'expose'
+    parameters inside docker-compose.yml files.
+
+    Options
+    -------
+        external: show external ports only
+        internal: show internal ports only
+        both: show both ports.
+    """
+
     external = "external"
     internal = "internal"
     both = "both"
 
 
 class PortView(Enum):
+    """Port View for docker ports.
+
+    Defines where to show port information on box.
+
+    Options
+    -------
+        hidden: Do not show info.
+        column: Show ports info in a separate column
+        name: Show ports info after service name
+        status: Show ports info after service status
+    """
+
     hidden = "hidden"
     column = "column"
     name = "name"
@@ -31,9 +62,11 @@ class PortView(Enum):
 
 
 class DockerInspect(InspectTemplate):
+    """DockerInspect class."""
 
     def __init__(self, compose: Compose, interval: int, port_view: PortView, port_detail: PortDetail,
                  files_to_watch: List[str], services_to_check_git: List[str]) -> None:
+        """Init class."""
         super(DockerInspect, self).__init__(compose, interval)
         self.port_view = PortView(port_view)
         self.port_detail = PortDetail(port_detail)
@@ -47,6 +80,11 @@ class DockerInspect(InspectTemplate):
         }
 
     def inspect(self, service: str) -> None:
+        """Inspect docker container.
+
+        :param service: service name as defined in docker-compose yml.
+        :return: None
+        """
         container_name = self._get_container_name(service)
         inspect_data = self._get_inspect_data(container_name)
 
@@ -70,9 +108,15 @@ class DockerInspect(InspectTemplate):
         }
 
     def _get_service_ports(self, service: str) -> str:
+        """Get docker services port info.
+
+        Will format text according the 'port_view' and 'port_detail' options.
+        :param service: service name as defined in docker-compose yml.
+        :return: string
+        """
         internal_ports = []
         external_ports = []
-        port_list = self.compose.get_from_service(service, 'ports') or ""
+        port_list = self.compose.get_ports_from_service(service) or ""
 
         if not port_list:
             return ""
@@ -97,29 +141,55 @@ class DockerInspect(InspectTemplate):
         return service_string
 
     def _get_container_name(self, service: str) -> str:
+        """Return container name for informed service.
+
+        Name can be retrieved from 'container_name' parameter in
+        docker-compose.yml files or calculated using this mask:
+        <folder_name>_<service_name>_1
+        :param service: service name as defined in docker-compose yml.
+        :return: string
+        """
         # Try container_name first
         name = self.compose.get_from_service(service, 'container_name')
         if not name:
             # Generate default_name
             name = os.path.basename(os.path.dirname(self.compose.full_path))
             name = re.sub(r'[^A-Za-z0-9]+', '', name)
-            name = "{}_{}_1".format(name, service)
+            name = "{}_{}_1".format(name.lower(), service.lower())
         return name
 
     def _get_inspect_data(self, service: str) -> dict:
+        """Run docker inspect command.
+
+        :param service: service name as defined in docker-compose yml.
+        :return: dict
+        """
         ret = self.run(
             'docker inspect {} 2>/dev/null'.format(service),
             get_stdout=True
         )
         return json.loads(ret)[0] if ret else {}
 
-    def _get_running_status(self, inspect_state: dict) -> str:
+    @staticmethod
+    def _get_running_status(inspect_state: dict) -> str:
+        """Get running status from inspect data.
+
+        :param inspect_state: dict from 'State' key in docker inspect data
+        :return: string
+        """
         if inspect_state.get('Health', False) and \
                 inspect_state['Status'].lower() == 'running':
             return inspect_state['Health']['Status'].title()
         return inspect_state['Status'].title()
 
-    def _get_style_and_theme_for_status(self, status: str, inspect_state: dict) -> Tuple[str, Union[str, None]]:
+    @staticmethod
+    def _get_style_and_theme_for_status(status: str, inspect_state: dict) -> Tuple[str, Union[str, None]]:
+        """Get text theme and style for status.
+
+        :param status: status retrieved from docker inspect data
+        :param inspect_state: dict from 'State' key in docker inspect data
+        :return: tuple (string, string or None)
+        """
         if not inspect_state['Running'] and not inspect_state['Paused']:
             return 'info', 'dark'
         if status.lower() in ['running', 'healthy']:
@@ -130,6 +200,11 @@ class DockerInspect(InspectTemplate):
             return 'warning', None
 
     def _define_status(self, inspect_data) -> Tuple[str, str, Optional[str]]:
+        """Return service running status based on docker inspect data.
+
+        :param inspect_data: docker inspect data.
+        :return: tuple (string, string, string or None)
+        """
         if not inspect_data.get('State'):
             return "Error", "error", None
         status = self._get_running_status(inspect_data['State'])
@@ -138,6 +213,24 @@ class DockerInspect(InspectTemplate):
         return status, style, theme
 
     def _need_build(self, service: str, inspect_data: dict) -> bool:
+        """Check if service need build.
+
+        This check use the following parameters from yml file:
+
+        watch_for_build_using_files
+        ---------------------------
+            Will check if any of the files listed in this parameter have
+            his modification date more recent than service docker image build date.
+
+        watch_for_build_using_git
+        -------------------------
+            Will check if any of the services listed in this parameters have
+            his last commit data more recent than service docker image build date.
+
+        :param service: service name as defined in docker-compose yml.
+        :param inspect_data: docker inspect data.
+        :return: bool
+        """
         test_date = None
         image_name = inspect_data['Config']['Image']
         image_data = self.run(

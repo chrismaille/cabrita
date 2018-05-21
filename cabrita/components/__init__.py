@@ -1,4 +1,4 @@
-"""Components Sub-Package
+"""Components Sub-Package.
 
 This package has the cabrita components for:
 
@@ -13,8 +13,8 @@ from enum import Enum
 
 
 class BoxColor(Enum):
-    """
-    Python Blessing Colors Enum
+    """Python Blessing Colors Enum.
+
     https://pypi.python.org/pypi/blessings/
 
     | Color   | Normal | Bright |
@@ -29,6 +29,7 @@ class BoxColor(Enum):
     | white   | 7      | 15     |
 
     """
+
     black = 16
     grey = 0
     blue = 4

@@ -1,3 +1,10 @@
+"""
+Dashboard module.
+
+This module contains the Dashboard class,
+which is responsible to build all dashing widgets from boxes
+generate the layout and display it in terminal.
+"""
 import signal
 import sys
 from datetime import datetime
@@ -16,27 +23,34 @@ from cabrita.components.config import Config
 
 
 class Dashboard:
-    """
-    Main dashboard class.
-
-    Initiate the main loop.
-    """
+    """Dashboard class."""
 
     def __init__(self, config: Config) -> None:
+        """Init class."""
         self.small_boxes = []
         self.large_boxes = []
-        self.compose_watch = None
-        self.user_watches = None
-        self.system_watch = None
+        self.compose_watch = None  # type: dashing.Text
+        self.user_watches = None  # type: dashing.Text
+        self.system_watch = None  # type: dashing.VSplit
         self.config = config
         self.layout = self.config.layout
         self.background_color = config.background_color_value
 
     @property
     def all_boxes(self) -> list:
+        """Return all boxes widgets in order.
+
+        :return: list
+        """
         return [self.user_watches, self.compose_watch, self.system_watch] + self.large_boxes + self.small_boxes
 
-    def _log_box(self, box: Box) -> None:
+    @staticmethod
+    def _log_box(box: Box) -> None:
+        """Log in terminal the add boxes operation.
+
+        :param box: box to be added in dashboard.
+        :return: None
+        """
         log_text = "Box '{}' added.".format(box.title)
         if box.docker.interval > 1:
             log_text += " Inspecting docker containers each {} seconds.".format(box.docker.interval)
@@ -48,6 +62,13 @@ class Dashboard:
         console.info(log_text)
 
     def run(self) -> None:
+        """Run dashboard code.
+
+        This code starts fullscreen mode,
+        hides cursor and display the generated layout.
+        To stop press 'q' or 'ctrl-c'.
+        :return: None
+        """
         term = Terminal()
         try:
             with term.fullscreen():
@@ -69,6 +90,11 @@ class Dashboard:
             raise exc
 
     def add_box(self, box: Box) -> None:
+        """Add new box to dashboard.
+
+        :param box: Box to be added
+        :return: None
+        """
         box_list = self.small_boxes if box.size == 'small' else self.large_boxes
         box_list.insert(
             0 if box.main else len(box_list),
@@ -76,7 +102,13 @@ class Dashboard:
         )
         self._log_box(box)
 
-    def _update_boxes(self):
+    def _update_boxes(self) -> None:
+        """Run code to update box data.
+
+        Each box has his own python thread to update info.
+        Timeout for each box operation is 30 seconds.
+        :return: None
+        """
         boxes_needing_update = [
             self.user_watches,
             self.compose_watch,
@@ -112,7 +144,11 @@ class Dashboard:
             print(formatStr.error("TIMEOUT WHILE REFRESHING DATA..."), file=sys.stderr)
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
+        """Make dashboard layout, using the 'layout' parameter from yml.
 
+        :param term: blessed terminal instance
+        :return: dashing object
+        """
         st = VSplit(
             self.user_watches.widget,
             VSplit(

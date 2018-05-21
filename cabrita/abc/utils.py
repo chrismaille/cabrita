@@ -11,7 +11,7 @@ Functions
 import os
 import re
 import subprocess
-from typing import Union, Optional
+from typing import Union, Optional, Sequence
 
 from buzio import formatStr
 from raven import Client
@@ -27,7 +27,7 @@ def get_sentry_client() -> Optional[Client]:
 def run_command(
         task,
         get_stdout=False,
-        run_stdout=False) -> Union[str, bool, KeyboardInterrupt]:
+        run_stdout=False) -> Union[bool, str]:
     """Run subprocess command.
 
     Args:
@@ -37,15 +37,16 @@ def run_command(
 
     Returns:
         Bool or String: Bool if task was executed or stdout
+
     """
     try:
         if run_stdout:
-            command = subprocess.check_output(task, shell=True)
+            command = subprocess.check_output(task, shell=True)  # type: Union[bytes, str, Sequence[Union[bytes, str]]]
 
             if not command:
                 return False
 
-            ret = subprocess.call(command, shell=True)
+            ret = subprocess.call(command, shell=True)  # type: Union[bytes, int, str, Sequence[Union[bytes, str]]]
 
         elif get_stdout is True:
             ret = subprocess.check_output(task, shell=True)
@@ -63,16 +64,20 @@ def run_command(
     except Exception:
         return False
 
-    return True if not get_stdout else ret.decode('utf-8')
+    if not get_stdout or ret == 0:
+        return True
+    if isinstance(ret, bytes):
+        return ret.decode('utf-8')
+    else:
+        return ret
 
 
-def get_path(path: str, base_path: str) -> Union[str, ValueError]:
+def get_path(path: str, base_path: str) -> str:
     """Return real path from string.
 
     Converts environment variables to path
     Converts relative path to full path
     """
-
     def _convert_env_to_path(env_in_path):
         s = re.search(r"\${(\w+)}", env_in_path)
         if not s:

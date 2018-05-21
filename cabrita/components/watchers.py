@@ -1,3 +1,12 @@
+"""
+Watchers module.
+
+This module contains the following classes:
+    Watch: Base class for watchers based on Box class.
+    DockerComposeWatch: Watch for docker-compose file status
+    UserWatch: Watch for user defined watchers in cabrita.yml
+    SystemWatch: Watch for system monitors (using PSutil)
+"""
 import os
 import re
 from datetime import datetime, timedelta
@@ -12,10 +21,17 @@ from cabrita.components.box import Box
 
 
 class Watch(Box):
+    """Watch class."""
+
     _interval = 30
 
     @property
     def interval(self):
+        """Return interval in seconds for each update.
+
+        Default: 30 seconds.
+        :return:
+        """
         return self._interval
 
     @interval.setter
@@ -23,9 +39,18 @@ class Watch(Box):
         self._interval = value
 
     def _execute(self) -> None:
+        """Execute method for the class.
+
+        Need to be implement in subclasses.
+        :return: None
+        """
         raise NotImplementedError()
 
     def run(self) -> None:
+        """Check if watch can update his data and execute the update.
+
+        :return: None
+        """
         if not self.can_update:
             return
         self._execute()
@@ -33,8 +58,10 @@ class Watch(Box):
 
 
 class DockerComposeWatch(Watch):
+    """Docker Compose Watch class."""
 
     def __init__(self, **kwargs) -> None:
+        """Init class."""
         self.config = kwargs.pop('config')
         self.version = kwargs.pop('version')
         super(DockerComposeWatch, self).__init__(**kwargs)
@@ -42,6 +69,10 @@ class DockerComposeWatch(Watch):
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
 
     def _execute(self) -> None:
+        """Execute data update for watch.
+
+        :return: None
+        """
         table_lines = []
         for file in self.config.compose_files:
             full_path = self.config.get_compose_path(file, os.path.dirname(file))
@@ -67,8 +98,10 @@ class DockerComposeWatch(Watch):
 
 
 class UserWatch(Watch):
+    """User Watch class."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
+        """Init class."""
         self.config = kwargs.pop('config')
         super(UserWatch, self).__init__(**kwargs)
         self._watchers = self.config.watchers
@@ -76,11 +109,14 @@ class UserWatch(Watch):
             'file': {},
             'external': {},
             'ping': {}
-        }
+        }  # type: Dict[Any, dict]
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
 
-    def _execute(self):
+    def _execute(self) -> None:
+        """Execute data update for each user watch.
 
+        :return: None
+        """
         if not self.file and not self.ping:
             self._widget = dashing.Text("No Watchers configured.", color=6, border_color=5,
                                         background_color=self.background_color,
@@ -102,7 +138,7 @@ class UserWatch(Watch):
             ("Ping", value[0], value[1])
             for key, value in self.result['ping'].items()
         ]
-        separator = [['--------', '------------------', '-------']]
+        separator = [('--------', '------------------', '-------')]
         if file_lines and ping_lines:
             table_lines = file_lines + separator + ping_lines
         else:
@@ -113,24 +149,50 @@ class UserWatch(Watch):
 
     @property
     def file(self) -> dict:
+        """Return watchers for file dict.
+
+        Default: {}
+        :return: dict
+        """
         return self._watchers.get('file_watch', {})
 
     @property
-    def external(self):
+    def external(self) -> list:
+        """Return watchers using external tools.
+
+        Default: []
+        :return: list
+        """
         return self._watchers.get('external_tool', [])
 
     @property
-    def ping(self):
+    def ping(self) -> dict:
+        """Return watchers for ping addresses.
+
+        Default: {}
+        :return: dict
+        """
         return self._watchers.get('ping', {})
 
-    def _execute_watch(self, watch_type: str, watch_name: str):
+    def _execute_watch(self, watch_type: str, watch_name: str) -> None:
+        """Execute data update for specific user watch type.
+
+        :param watch_type: watch type (ping, external or file)
+        :param watch_name: watch name
+        :return:  None
+        """
         watch_data = getattr(self, watch_type).get(watch_name)
         if not self.result[watch_type].get(watch_name):
             self.result[watch_type][watch_name] = [watch_data['name'], "Fetching..."]
         getattr(self, '_get_{}_result'.format(watch_type))(watch_data, watch_name)
 
     def _get_ping_result(self, watch_data: dict, watch_name: str) -> None:
+        """Get ping result for informed watch.
 
+        :param watch_data: watch data
+        :param watch_name: watch name
+        :return: None
+        """
         ret = run_command(
             'curl -f --connect-timeout {} {} 1>/dev/null 2>/dev/null'.format(watch_data.get('timeout', 1),
                                                                              watch_data['address'])
@@ -147,7 +209,12 @@ class UserWatch(Watch):
         ]
 
     def _get_file_result(self, watch_data: dict, watch_name: str) -> None:
+        """Check file status based on watch data.
 
+        :param watch_data: watch data
+        :param watch_name: watch name
+        :return: None
+        """
         # Check destination git state
         dest_path = get_path(watch_data['dest_path'], self.config.base_path)
         dest_state = self.git.get_behind_state(dest_path)
@@ -179,10 +246,10 @@ class UserWatch(Watch):
                     style = "success"
 
             # Save state in dictionary
-            if not "OK" in source_state:
+            if "OK" not in source_state:
                 name = format_color(watch_data['name'], style="error")
                 self.result['file'][watch_name] = [name, source_state]
-            elif not "OK" in dest_state:
+            elif "OK" not in dest_state:
                 name = format_color(watch_data['name'], style="error")
                 self.result['file'][watch_name] = [name, dest_state]
             else:
@@ -191,10 +258,13 @@ class UserWatch(Watch):
 
 
 class SystemWatch(Watch):
+    """System Watch class."""
+
     _interval = 0.25
 
     @staticmethod
-    def _get_docker_folder_size():
+    def _get_docker_folder_size() -> float:
+        """Get total size occupied by docker data in bytes."""
         multiple = {
             'B': 1,
             'KB': 1024,
@@ -210,7 +280,7 @@ class SystemWatch(Watch):
             if not line:
                 continue
             value = re.sub(r'[A-Za-z]+', '', line)
-            size = re.sub(r'[0-9\.]+', '', line)
+            size = re.sub(r'[0-9.]+', '', line)
             m = [
                 multiple[key]
                 for key in multiple
@@ -220,14 +290,8 @@ class SystemWatch(Watch):
 
         return total_size
 
-    def run(self):
-        """Get machine info using PSUtil.
-
-        Returns
-        -------
-            obj: dashing.HSplit instance
-
-        """
+    def _execute(self) -> None:
+        """Get machine info using PSUtil."""
         cpu_percent = round(psutil.cpu_percent(interval=None) * 10, 0) / 10
         free_memory = int(psutil.virtual_memory().available / 1024 / 1024)
         total_memory = int(psutil.virtual_memory().total / 1024 / 1024)

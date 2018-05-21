@@ -18,7 +18,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections import Hashable
 from datetime import datetime, timedelta
-from typing import Union, Dict, List, Any
+from typing import Union, Dict, List, Any, Tuple
 
 import yaml
 from buzio import console
@@ -28,9 +28,8 @@ from cabrita.abc.utils import run_command
 
 
 class ConfigTemplate(ABC):
-    """
-    Abstract class for processing yaml files.
-    """
+    """Abstract class for processing yaml files."""
+
     compose_data = Union[Union[Dict[Hashable, Any], List[Any], None], Any]
 
     def __init__(self) -> None:
@@ -51,16 +50,16 @@ class ConfigTemplate(ABC):
         :param
             manual_compose_paths: list of docker-compose paths informed on prompt
         """
-        self.compose_data_list = []
+        self.compose_data_list = []  # type: List[dict]
         self._base_path = None
-        self.list_path = []
-        self.full_path = None
-        self.data = {}
+        self.list_path = []  # type: List[Tuple[str, str]]
+        self.full_path = None  # type: str
+        self.data = {}  # type: Dict[str, Any]
         self.console = console
-        self.manual_compose_paths = []
+        self.manual_compose_paths = []  # type: List[dict]
 
     @property
-    def base_path(self):
+    def base_path(self) -> str:
         """Return base path for yaml file."""
         return self._base_path
 
@@ -103,7 +102,7 @@ class ConfigTemplate(ABC):
                     self.full_path = get_path(path, base_path)
                     self.console.info("Reading {}".format(self.full_path))
                     with open(self.full_path, 'r') as file:
-                        self.compose_data = yaml.load(file.read())
+                        self.compose_data = yaml.load(file.read())  # type: dict
                         for key in self.compose_data:
                             self._convert_lists(self.compose_data, key)
                         self.compose_data_list.append(self.compose_data)
@@ -154,49 +153,49 @@ class ConfigTemplate(ABC):
     def _load_data_from_override(self, source, target, key):
         """Append override data in self.compose.
 
-            Example Compose
-            ---------------
-            core:
-                build:
-                    context: ../core
-                image: core
-                networks:
-                    - backend
-                environment:
-                    - DEBUG=false
-                ports:
-                 - "8080:80"
+        Example Compose
+        ---------------
+        core:
+            build:
+                context: ../core
+            image: core
+            networks:
+                - backend
+            environment:
+                - DEBUG=false
+            ports:
+             - "8080:80"
 
-            Example override
-            ----------------
-            core:
-                build:
-                    dockerfile: Docker_dev
-                depends_on:
-                    - api
-                command: bash -c "python manage.py runserver 0.0.0.0"
-                environment:
-                    DEBUG: "True"
-                ports:
-                    - "9000:80"
+        Example override
+        ----------------
+        core:
+            build:
+                dockerfile: Docker_dev
+            depends_on:
+                - api
+            command: bash -c "python manage.py runserver 0.0.0.0"
+            environment:
+                DEBUG: "True"
+            ports:
+                - "9000:80"
 
-            Final Result
-            ------------
-            core:
-                build:
-                    context: ../core
-                    dockerfile: Docker_dev
-                depends_on:
-                    - api
-                image: core
-                command: bash -c "python manage.py runserver 0.0.0.0"
-                environment:
-                    DEBUG: "True"
-                networks:
-                    - backend
-                ports:
-                 - "8080:80"
-                 - "9000:80"
+        Final Result
+        ------------
+        core:
+            build:
+                context: ../core
+                dockerfile: Docker_dev
+            depends_on:
+                - api
+            image: core
+            command: bash -c "python manage.py runserver 0.0.0.0"
+            environment:
+                DEBUG: "True"
+            networks:
+                - backend
+            ports:
+             - "8080:80"
+             - "9000:80"
 
         """
         if target.get(key, None):
@@ -220,9 +219,7 @@ class ConfigTemplate(ABC):
 
 
 class InspectTemplate(ABC):
-    """
-    Abstract class for compose service inspectors.
-    """
+    """Abstract class for compose service inspectors."""
 
     def __init__(self, compose: ConfigTemplate, interval: int) -> None:
         """Initialize class.
@@ -243,7 +240,7 @@ class InspectTemplate(ABC):
         """
         self.run = run_command
         self.compose = compose
-        self._status = {}
+        self._status = {}  # type: dict
         self.interval = interval
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
         self.default_data = None
@@ -260,8 +257,8 @@ class InspectTemplate(ABC):
         return seconds_elapsed >= self.interval
 
     def status(self, service) -> Union[dict, str]:
-        """
-        Return service status.
+        """Return service status.
+
         If can update, start fetching new data calling self.inspect method.
 
         :param service:
