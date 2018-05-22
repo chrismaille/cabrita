@@ -85,7 +85,7 @@ class ConfigTemplate(ABC):
                 self.base_path = base_path
             self.list_path.append((path, base_path))
 
-    def load_data(self) -> None:
+    def load_file_data(self) -> None:
         """Load data from yaml file.
 
         First file will be the main file.
@@ -106,9 +106,9 @@ class ConfigTemplate(ABC):
                         for key in self.compose_data:
                             self._convert_lists(self.compose_data, key)
                         self.compose_data_list.append(self.compose_data)
-                except IOError as exc:
+                except FileNotFoundError as exc:
                     console.error("Cannot open file: {}".format(exc))
-                    sys.exit(1)
+                    sys.exit(127)
                 except yaml.YAMLError as exc:
                     console.error("Cannot read file: {}".format(exc))
                     sys.exit(1)

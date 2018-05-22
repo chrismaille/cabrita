@@ -40,15 +40,7 @@ def run_command(
 
     """
     try:
-        if run_stdout:
-            command = subprocess.check_output(task, shell=True)  # type: Union[bytes, str, Sequence[Union[bytes, str]]]
-
-            if not command:
-                return False
-
-            ret = subprocess.call(command, shell=True)  # type: Union[bytes, int, str, Sequence[Union[bytes, str]]]
-
-        elif get_stdout is True:
+        if get_stdout is True:
             ret = subprocess.check_output(task, shell=True)
         else:
             ret = subprocess.call(

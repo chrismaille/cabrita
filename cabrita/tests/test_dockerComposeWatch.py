@@ -12,7 +12,7 @@ class TestDockerComposeWatch(TestCase):
         inspector = MagicMock()
         self.config = Config()
         self.config.add_path(LATEST_CONFIG_PATH)
-        self.config.load_data()
+        self.config.load_file_data()
         self.watch = DockerComposeWatch(config=self.config, version=self.config.version, git=inspector,
                                         docker=inspector)
 

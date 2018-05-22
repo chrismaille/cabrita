@@ -19,7 +19,7 @@ class TestCompose(TestCase):
         self.compose.base_path = os.path.join(parent_dir, 'examples')
         self.compose.add_path("./examples/docker-compose.yml")
         self.compose.add_path("./examples/docker-compose.override.yml")
-        self.compose.load_data()
+        self.compose.load_file_data()
         result_dict = {
             'version': '3',
             'services': {

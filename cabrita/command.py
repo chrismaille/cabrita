@@ -27,7 +27,7 @@ class CabritaCommand:
         self.cabrita_path = cabrita_path
         self.config = Config()
         self.config.add_path(self.cabrita_path)
-        self.config.load_data()
+        self.config.load_file_data()
         self.config.manual_compose_paths = list(compose_path)
         self.compose = None  # type: Compose
         self.dashboard = None  # type: Dashboard
@@ -58,7 +58,7 @@ class CabritaCommand:
             self.compose.add_path(compose, base_path=os.path.dirname(compose))
             if not self.compose.is_valid:
                 sys.exit(1)
-        self.compose.load_data()
+        self.compose.load_file_data()
         if self.config.version == 0:
             self.config.generate_boxes(self.compose.services)
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 
 from cabrita.components.config import Config
+from cabrita.tests import LATEST_CONFIG_PATH
 
 
 class TestConfig(TestCase):
@@ -13,8 +14,8 @@ class TestConfig(TestCase):
 
     def _generate_config(self):
         self.config = Config()
-        self.config.add_path('./examples/config/cabrita-v2.yml')
-        self.config.load_data()
+        self.config.add_path(LATEST_CONFIG_PATH)
+        self.config.load_file_data()
         self.assertTrue(self.config.is_valid)
 
     def test_ignore_services(self):
@@ -73,7 +74,7 @@ class TestConfig(TestCase):
     def test_bad_config(self):
         self.config = Config()
         self.config.add_path('./examples/config/cabrita-v2.yml')
-        self.config.load_data()
+        self.config.load_file_data()
         self.config.data['layout'] = 'triangular'
         self.config.data['background_color'] = 'no_color'
         self.config.data['compose_files'] = {}

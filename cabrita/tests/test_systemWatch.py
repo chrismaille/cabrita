@@ -35,4 +35,10 @@ class TestSystemWatch(TestCase):
     def test_run(self, *mocks):
         from dashing import dashing
         self.watch.run()
-        self.assertIsInstance(self.watch.widget, dashing.Text)
+        self.assertIsInstance(self.watch.widget, dashing.VSplit)
+
+    @mock.patch('cabrita.components.watchers.run_command', return_value=DOCKER_DF_DATA)
+    def test__execute(self, *mocks):
+        from dashing import dashing
+        self.watch._execute()
+        self.assertIsInstance(self.watch.widget, dashing.VSplit)

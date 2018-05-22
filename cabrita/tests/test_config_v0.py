@@ -18,7 +18,7 @@ class TestConfig(TestCase):
     def _generate_config(self):
         self.config = Config()
         self.config.manual_compose_paths = self.manual_files
-        self.config.load_data()
+        self.config.load_file_data()
         self.assertTrue(self.config.is_valid)
 
     def test_ignore_services(self):

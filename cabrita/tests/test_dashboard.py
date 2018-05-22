@@ -17,7 +17,7 @@ class TestDashboard(TestCase):
         self.dummyWatch = Box()
         self.config = Config()
         self.config.add_path(LATEST_CONFIG_PATH)
-        self.config.load_data()
+        self.config.load_file_data()
         self.assertTrue(self.config.is_valid)
         self.dashboard = Dashboard(self.config)
         self.dashboard.compose_watch = self.dummyWatch
