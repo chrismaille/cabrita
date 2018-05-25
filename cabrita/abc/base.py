@@ -50,9 +50,9 @@ class ConfigTemplate(ABC):
             manual_compose_paths: list of docker-compose paths informed on prompt
         """
         self.compose_data_list = []  # type: List[dict]
-        self._base_path = None
+        self._base_path = ""
         self.list_path = []  # type: List[Tuple[str, str]]
-        self.full_path = None  # type: str
+        self.full_path = ""  # type: str
         self.data = {}  # type: Dict[str, Any]
         self.console = console
         self.manual_compose_paths = []  # type: List[dict]
