@@ -65,4 +65,8 @@ class TestConfig(TestCase):
             }
         }
         self.config.generate_boxes(services_list)
-        self.assertDictEqual(self.config.boxes, expected_box)
+        self.assertListEqual(self.config.boxes['box_0']['includes'], expected_box['box_0']['includes'])
+        self.assertEqual(self.config.boxes['box_0']['name'], expected_box['box_0']['name'])
+        self.assertEqual(self.config.boxes['box_0']['port_view'], expected_box['box_0']['port_view'])
+        self.assertEqual(self.config.boxes['box_0']['show_revision'], expected_box['box_0']['show_revision'])
+        self.assertEqual(self.config.boxes['box_0']['size'], expected_box['box_0']['size'])

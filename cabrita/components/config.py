@@ -19,8 +19,8 @@ from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
 from cabrita.components import BoxColor
 
-
 logger = logging.getLogger(__name__)
+
 
 class Config(ConfigTemplate):
     """Cabrita Configuration main class."""
