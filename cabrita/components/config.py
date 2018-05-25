@@ -1,10 +1,10 @@
 """Config module.
 
 This module has:
-    The Config class, which is responsible for
+    The **Config class**, which is responsible for
     handling program options from cabrita.yml file.
 
-    The Compose class, which is responsible for
+    The **Compose class**, which is responsible for
     handling docker-compose data from yamls.
 """
 import math
@@ -28,6 +28,7 @@ class Config(ConfigTemplate):
 
         Parameter: 'ignore_services'.
         Default: All services viewed.
+
         :return: list
         """
         return self.data.get('ignore_services', [])
@@ -38,6 +39,7 @@ class Config(ConfigTemplate):
 
         Parameter: 'compose_files'.
         Default is empty.
+
         :return: list
         """
         return self.data['compose_files']
@@ -48,6 +50,7 @@ class Config(ConfigTemplate):
 
         Parameter: 'layout'
         Options are: 'horizontal' and 'vertical'. Default: 'horizontal'.
+
         :return: str
         """
         return self.data['layout']
@@ -58,6 +61,7 @@ class Config(ConfigTemplate):
 
         Parameter: 'boxes'.
         No default available.
+
         :return: dict
         """
         return self.data['boxes']
@@ -68,6 +72,7 @@ class Config(ConfigTemplate):
 
         Parameter: 'title'.
         Default: 'Docker-Compose'.
+
         :return: str
         """
         return self.data.get('title') or "Docker-Compose"
@@ -77,7 +82,9 @@ class Config(ConfigTemplate):
         """Return background color for box.
 
         Parameter: 'background_color'.
-        Options: Black, Blue, Cyan, Grey, Yellow, White. Default: Black.
+        Options: Black, Blue, Cyan, Grey, Yellow, White.
+        Default: Black.
+
         :return: BoxColor instance.
         """
         return getattr(BoxColor, self.data.get('background_color', 'black'))
@@ -95,6 +102,7 @@ class Config(ConfigTemplate):
         """Return watchers configuration data.
 
         Parameter: 'watchers'.
+
         No default available.
         :return:
         """
@@ -108,6 +116,7 @@ class Config(ConfigTemplate):
             Version 0: No yml available - calls _check_v0().
             Version 1: Deprecated - calls _check_v1().
             Version 2: Last version - calls _check_v2().
+
         :return: bool
         """
         if not hasattr(self, "_check_v{}".format(self.version)):
@@ -120,7 +129,9 @@ class Config(ConfigTemplate):
         """Check for version 0.
 
         This version are called when user do not inform any yaml file.
+
         :param start_here: Check if operation starts here, to show message.
+
         :return: bool
         """
         if start_here:
@@ -136,7 +147,9 @@ class Config(ConfigTemplate):
         """Check for version 1.
 
         Deprecated Version. This version use only on docker-compose.yml file.
+
         :param start_here: Check if operation starts here, to show message.
+
         :return: bool
         """
         if start_here:
@@ -210,8 +223,8 @@ class Config(ConfigTemplate):
         """Check for version 2. Latest version.
 
         :param start_here: Check if operation starts here, to show message.
-        :return:
-            bool
+
+        :return: bool
         """
         if start_here:
             self.console.info('Validating configuration data...')
@@ -297,8 +310,11 @@ class Config(ConfigTemplate):
 
         The compose path can be absolute or relative - the 'base_path' will
         be used to resolve full path.
+
         :param compose_path: the path for docker-compose file.
+
         :param base_path: the base path for cabrita.yml file.
+
         :return: str
         """
         return get_path(compose_path, base_path)
@@ -309,7 +325,9 @@ class Config(ConfigTemplate):
         The number of boxes are determined by terminal size.
         The columns visible inside each one are determined
         by the number of boxes generated.
+
         :param services: services to be included in dashboard.
+
         :return: dict
         """
         service_list = sorted(list(services.keys()))
@@ -378,6 +396,7 @@ class Compose(ConfigTemplate):
 
         :param service_name:
             docker service name
+
         :return:
             bool
         """
@@ -388,6 +407,7 @@ class Compose(ConfigTemplate):
 
         :param service_name:
             docker service name
+
         :return:
             str
         """
@@ -402,8 +422,10 @@ class Compose(ConfigTemplate):
 
         :param service_name:
             docker service name
+
         :param key:
             search key for service data
+
         :return:
             List, String, Dict or None
         """
@@ -418,7 +440,9 @@ class Compose(ConfigTemplate):
         """Return ports from service.
 
         The ports can be from the 'ports' or 'expose' parameters in yaml.
+
         :param service: service name
+
         :return: List or None
         """
         port_data = self.get_from_service(service, 'ports')

@@ -32,9 +32,9 @@ class PortDetail(Enum):
 
     Options
     -------
-        external: show external ports only
-        internal: show internal ports only
-        both: show both ports.
+        * **external**: show external ports only
+        * **internal**: show internal ports only
+        * **both**: show both ports.
     """
 
     external = "external"
@@ -47,12 +47,11 @@ class PortView(Enum):
 
     Defines where to show port information on box.
 
-    Options
-    -------
-        hidden: Do not show info.
-        column: Show ports info in a separate column
-        name: Show ports info after service name
-        status: Show ports info after service status
+    Options:
+        * **hidden**: Do not show info.
+        * **column**: Show ports info in a separate column
+        * **name**: Show ports info after service name
+        * **status**: Show ports info after service status
     """
 
     hidden = "hidden"
@@ -83,6 +82,7 @@ class DockerInspect(InspectTemplate):
         """Inspect docker container.
 
         :param service: service name as defined in docker-compose yml.
+
         :return: None
         """
         container_name = self._get_container_name(service)
@@ -111,7 +111,9 @@ class DockerInspect(InspectTemplate):
         """Get docker services port info.
 
         Will format text according the 'port_view' and 'port_detail' options.
+
         :param service: service name as defined in docker-compose yml.
+
         :return: string
         """
         internal_ports = []
@@ -145,8 +147,10 @@ class DockerInspect(InspectTemplate):
 
         Name can be retrieved from 'container_name' parameter in
         docker-compose.yml files or calculated using this mask:
-        <folder_name>_<service_name>_1
+        ``<folder_name>_<service_name>_1``
+
         :param service: service name as defined in docker-compose yml.
+
         :return: string
         """
         # Try container_name first
@@ -162,6 +166,7 @@ class DockerInspect(InspectTemplate):
         """Run docker inspect command.
 
         :param service: service name as defined in docker-compose yml.
+
         :return: dict
         """
         ret = self.run(
@@ -175,6 +180,7 @@ class DockerInspect(InspectTemplate):
         """Get running status from inspect data.
 
         :param inspect_state: dict from 'State' key in docker inspect data
+
         :return: string
         """
         if inspect_state.get('Health', False) and \
@@ -187,7 +193,9 @@ class DockerInspect(InspectTemplate):
         """Get text theme and style for status.
 
         :param status: status retrieved from docker inspect data
+
         :param inspect_state: dict from 'State' key in docker inspect data
+
         :return: tuple (string, string or None)
         """
         if not inspect_state['Running'] and not inspect_state['Paused']:
@@ -203,6 +211,7 @@ class DockerInspect(InspectTemplate):
         """Return service running status based on docker inspect data.
 
         :param inspect_data: docker inspect data.
+
         :return: tuple (string, string, string or None)
         """
         if not inspect_data.get('State'):
@@ -217,18 +226,20 @@ class DockerInspect(InspectTemplate):
 
         This check use the following parameters from yml file:
 
-        watch_for_build_using_files
-        ---------------------------
+        **watch_for_build_using_files**
+
             Will check if any of the files listed in this parameter have
             his modification date more recent than service docker image build date.
 
-        watch_for_build_using_git
-        -------------------------
+        **watch_for_build_using_git**
+
             Will check if any of the services listed in this parameters have
             his last commit data more recent than service docker image build date.
 
         :param service: service name as defined in docker-compose yml.
+
         :param inspect_data: docker inspect data.
+
         :return: bool
         """
         test_date = None

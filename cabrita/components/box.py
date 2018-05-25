@@ -22,7 +22,9 @@ def update_box(box):
     """Update box data.
 
     This method are called by a thread class to update.
+
     :param box: the box to update
+
     :return: dashing object
     """
     try:
@@ -96,6 +98,7 @@ class Box:
         """Return interval in seconds for each box data update.
 
         Minimum: 0.5.
+
         :return: float
         """
         return float(self.data.get('interval', 0.50))
@@ -104,7 +107,8 @@ class Box:
     def show_git(self) -> bool:
         """Return if box will show git information (the 'show_git' box parameter).
 
-        Default: True.
+        Default: True
+
         :return: bool
         """
         return self.data.get('show_git', True)
@@ -113,8 +117,9 @@ class Box:
     def show_revision(self) -> bool:
         """Return if box will show git tag/commit hash (the 'show_revision" box parameter).
 
-        Default: False.
-        :return:
+        Default: False
+
+        :return: bool
         """
         return self.data.get('show_revision', False)
 
@@ -122,8 +127,9 @@ class Box:
     def port_view(self) -> PortView:
         """Return if box will show docker container port info (the 'port_view' box parameter).
 
-        Default: hidden.
-        :return: PortView enum property.
+        Default: hidden
+
+        :return: PortView enum property
         """
         return PortView(self.data.get('port_view', PortView.hidden))
 
@@ -131,7 +137,9 @@ class Box:
     def port_detail(self) -> PortDetail:
         """Return if box will show external, internal or both docker container exposed ports.
 
-        Works in conjunction with 'port_view' parameter. Default: external ports.
+        Works in conjunction with 'port_view' parameter.
+        Default: external ports.
+
         :return: PortDetail enum property
         """
         return PortDetail(self.data.get('port_detail', PortDetail.external))
@@ -141,6 +149,7 @@ class Box:
         """Return if box will show services as columns (categories).
 
         Default: Show as lines.
+
         :return: list
         """
         return self.data.get('categories', [])
@@ -150,6 +159,7 @@ class Box:
         """Return box title name (the 'name' box parameter).
 
         Default: "Box".
+
         :return: string
         """
         return self.data.get('name', 'Box')
@@ -159,6 +169,7 @@ class Box:
         """Return box size to render in dashboard (the 'size' box parameter).
 
         Default: "large".
+
         :return: string
         """
         return self.data.get('size', 'large')
@@ -167,8 +178,9 @@ class Box:
     def main(self) -> bool:
         """Return if this is the main box (the 'main' box parameter).
 
-        Default: No
+        Default: No.
         Only one box can be true.
+
         :return: bool
         """
         return bool(self.data.get('main', False))
@@ -179,6 +191,7 @@ class Box:
 
         Default is: no filters.
         This option is mutually exclusive with the 'main' parameter.
+
         :return: list
         """
         return self.data.get('includes', [])
@@ -196,6 +209,7 @@ class Box:
         """Set the Background color for the box.
 
         :param value: BoxColor property
+
         :return: None
         """
         self._background_color = value.value
@@ -204,6 +218,7 @@ class Box:
         """Add data from config class in box.
 
         :param data: config data parsed from cabrita.yml file.
+
         :return: None
         """
         self.data = data
@@ -212,6 +227,7 @@ class Box:
         """Append new service in box services list.
 
         :param service: service name
+
         :return: None
         """
         self._services.append(service)
@@ -225,6 +241,7 @@ class Box:
             - Docker Container exposed ports
             - Git Branch Info (branch name and status)
             - categories listed in config yml for the box
+
         :return: list
         """
         table_header = ['Service', 'Status']
@@ -264,6 +281,7 @@ class Box:
         """Run main code for update box data.
 
         Updates the box widget property.
+
         :return: None
         """
         # Define Headers
@@ -339,8 +357,11 @@ class Box:
             The code will attempt to find the 'auth-worker' service inside compose data.
             The Search are not case-sensitive and not will not match entire name. 'Auth-Worker1' will be found.
             If find, return the docker inspect data for this service.
+
         :param service: service name
+
         :param category: category name
+
         :return: dict or None
         """
         service_to_find = [
@@ -358,7 +379,8 @@ class Box:
     def format_revision(table_lines: list) -> list:
         """Format revision info to make all lines have the same width.
 
-        Example:
+        Example::
+
             Revision 1: master@1234abc
             Revision 2: epic/refactoring@5678def
 
@@ -368,6 +390,7 @@ class Box:
             Revision 2: epic/refactoring@5678def
 
         :param table_lines: list
+
         :return: list
         """
         largest_tag = max([

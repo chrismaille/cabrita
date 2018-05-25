@@ -2,31 +2,33 @@
 
 This package has the cabrita components for:
 
-box = the Box class (the building block for the dashboard)
-config = the Config class (the data from cabrita.yml file)
-dashboard = the Dashboard class (convert boxes to dashing widgets and display it)
-docker = the DockerInspect class (the runner for inspect docker containers)
-git = the GitInspect class (the runner for inspect git data)
-watchers = the Watch class (the collection of internal and user watchers for the dashboard
+| box = the Box class (the building block for the dashboard)
+| config = the Config class (the data from cabrita.yml file)
+| dashboard = the Dashboard class (convert boxes to dashing widgets and display it)
+| docker = the DockerInspect class (the runner for inspect docker containers)
+| git = the GitInspect class (the runner for inspect git data)
+| watchers = the Watch class (the collection of internal and user watchers for the dashboard
 """
 from enum import Enum
 
 
 class BoxColor(Enum):
-    """Python Blessing Colors Enum.
+    """Enum using `Blessing`_ Colors values.
 
-    https://pypi.python.org/pypi/blessings/
+    .. _Blessing: https://pypi.python.org/pypi/blessings/
 
-    | Color   | Normal | Bright |
-    |---------|--------|--------|
-    | black   | 0      | 8      |
-    | red     | 1      | 9      |
-    | green   | 2      | 10     |
-    | yellow  | 3      | 11     |
-    | blue    | 4      | 12     |
-    | magenta | 5      | 13     |
-    | cyan    | 6      | 14     |
-    | white   | 7      | 15     |
+    ======= ====== ======
+    Color   Normal Bright
+    ======= ====== ======
+    black   0      8
+    red     1      9
+    green   2      10
+    yellow  3      11
+    blue    4      12
+    magenta 5      13
+    cyan    6      14
+    white   7      15
+    ======= ====== ======
 
     """
 

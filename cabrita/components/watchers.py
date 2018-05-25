@@ -1,12 +1,4 @@
-"""
-Watchers module.
-
-This module contains the following classes:
-    Watch: Base class for watchers based on Box class.
-    DockerComposeWatch: Watch for docker-compose file status
-    UserWatch: Watch for user defined watchers in cabrita.yml
-    SystemWatch: Watch for system monitors (using PSutil)
-"""
+"""Watchers module."""
 import os
 import re
 from datetime import datetime, timedelta
@@ -22,7 +14,10 @@ from cabrita.components.box import Box
 
 
 class Watch(Box):
-    """Watch class."""
+    """Watch class.
+
+    Base class for watchers based on Box class.
+    """
 
     _interval = 30.0
 
@@ -31,7 +26,8 @@ class Watch(Box):
         """Return interval in seconds for each update.
 
         Default: 30 seconds.
-        :return:
+
+        :return: float
         """
         return self._interval
 
@@ -43,6 +39,7 @@ class Watch(Box):
         """Execute method for the class.
 
         Need to be implement in subclasses.
+
         :return: None
         """
         raise NotImplementedError()
@@ -59,7 +56,10 @@ class Watch(Box):
 
 
 class DockerComposeWatch(Watch):
-    """Docker Compose Watch class."""
+    """Docker Compose Watch class.
+
+    Watch for docker-compose file status.
+    """
 
     def __init__(self, **kwargs) -> None:
         """Init class."""
@@ -99,7 +99,10 @@ class DockerComposeWatch(Watch):
 
 
 class UserWatch(Watch):
-    """User Watch class."""
+    """User Watch class.
+
+    Watch for user defined watchers in cabrita.yml.
+    """
 
     def __init__(self, **kwargs) -> None:
         """Init class."""
@@ -153,6 +156,7 @@ class UserWatch(Watch):
         """Return watchers for file dict.
 
         Default: {}
+
         :return: dict
         """
         return self._watchers.get('file_watch', {})
@@ -162,6 +166,7 @@ class UserWatch(Watch):
         """Return watchers using external tools.
 
         Default: []
+
         :return: list
         """
         return self._watchers.get('external_tool', [])
@@ -171,6 +176,7 @@ class UserWatch(Watch):
         """Return watchers for ping addresses.
 
         Default: {}
+
         :return: dict
         """
         return self._watchers.get('ping', {})
@@ -179,7 +185,9 @@ class UserWatch(Watch):
         """Execute data update for specific user watch type.
 
         :param watch_type: watch type (ping, external or file)
+
         :param watch_name: watch name
+
         :return:  None
         """
         watch_data = getattr(self, watch_type).get(watch_name)
@@ -191,7 +199,9 @@ class UserWatch(Watch):
         """Get ping result for informed watch.
 
         :param watch_data: watch data
+
         :param watch_name: watch name
+
         :return: None
         """
         ret = run_command(
@@ -213,7 +223,9 @@ class UserWatch(Watch):
         """Check file status based on watch data.
 
         :param watch_data: watch data
+
         :param watch_name: watch name
+
         :return: None
         """
         # Check destination git state
@@ -259,7 +271,10 @@ class UserWatch(Watch):
 
 
 class SystemWatch(Watch):
-    """System Watch class."""
+    """System Watch class.
+
+    Watch for system monitors (using psutil).
+    """
 
     _interval = 0.25
 

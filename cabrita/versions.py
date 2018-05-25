@@ -14,10 +14,9 @@ from cabrita import __version__
 
 
 def versions() -> Optional[List[str]]:
-    """Function: versions.
+    """Return the version list data from PyPI.
 
-    Summary: Request all versions registered in PyPI
-    Returns: list
+    :return: list
     """
     console.info("Checking for updates...")
     url = "https://pypi.python.org/pypi/cabrita/json"
@@ -34,11 +33,13 @@ def versions() -> Optional[List[str]]:
 
 
 def check_version() -> str:
-    """Function: check_version.
+    """Check if it is the latest version.
 
-    Summary: Compares actual version vs last known
-    version in PyPI for upgrades
-    Returns: Bool = true if updated
+    Compares actual version vs last known
+    version in PyPI, for upgrades
+
+    :return:
+        string
     """
     last_version = __version__
     version_data = versions()

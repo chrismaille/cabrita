@@ -1,13 +1,4 @@
-"""Base utils module.
-
-Functions
----------
-    get_sentry_client: Return Sentry client
-    run_command: Run subprocess calls
-    get_path: Resolve relative paths
-    format_color: Abstract buzio formatStr method
-
-"""
+"""Base utils module."""
 import os
 import re
 import subprocess
@@ -24,19 +15,17 @@ def get_sentry_client() -> Optional[Client]:
         'CABRITA_SENTRY_DSN') else None
 
 
-def run_command(
-        task,
-        get_stdout=False,
-        run_stdout=False):
+def run_command(task, get_stdout=False):
     """Run subprocess command.
 
-    Args:
-        task (string): the command to run
-        get_stdout (bool, optional): capture stdout
-        run_stdout (bool, optional): capture and run stdout
+    The function will attempt to run the task informed and
+    return a boolean for the exit code or the captured std from console.
 
-    Returns:
-        Bool or String: Bool if task was executed or stdout
+    :arg: task (string): the command to run
+    :arg: get_stdout (bool, optional): capture stdout
+    :arg: run_stdout (bool, optional): capture and run stdout
+
+    :return: bool or string
 
     """
     try:

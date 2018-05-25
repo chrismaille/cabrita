@@ -49,6 +49,7 @@ class Dashboard:
         """Log in terminal the add boxes operation.
 
         :param box: box to be added in dashboard.
+
         :return: None
         """
         log_text = "Box '{}' added.".format(box.title)
@@ -67,6 +68,7 @@ class Dashboard:
         This code starts fullscreen mode,
         hides cursor and display the generated layout.
         To stop press 'q' or 'ctrl-c'.
+
         :return: None
         """
         term = Terminal()
@@ -93,6 +95,7 @@ class Dashboard:
         """Add new box to dashboard.
 
         :param box: Box to be added
+
         :return: None
         """
         box_list = self.small_boxes if box.size == 'small' else self.large_boxes
@@ -107,6 +110,7 @@ class Dashboard:
 
         Each box has his own python thread to update info.
         Timeout for each box operation is 30 seconds.
+
         :return: None
         """
         boxes_needing_update = [
@@ -147,6 +151,7 @@ class Dashboard:
         """Make dashboard layout, using the 'layout' parameter from yml.
 
         :param term: blessed terminal instance
+
         :return: dashing object
         """
         st = VSplit(

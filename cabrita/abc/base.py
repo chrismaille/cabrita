@@ -1,16 +1,18 @@
 """Base Module.
 
 ConfigTemplate
---------------
-    Base class for the config template object.
-    This template will process the YAML files.
-    Subclasses are: Config and Compose classes
+^^^^^^^^^^^^^^
+
+Base class for the config template object.
+This template will process the YAML files.
+Subclasses are: Config and Compose classes
 
 InspectTemplate
----------------
-    Base class for the Inspector template object.
-    This template will process docker and git status for compose services
-    Subclasses are: DockerInspect and GitInspect
+^^^^^^^^^^^^^^^
+
+Base class for the Inspector template object.
+This template will process docker and git status for compose services
+Subclasses are: DockerInspect and GitInspect
 
 """
 import os
@@ -150,7 +152,7 @@ class ConfigTemplate(ABC):
     def _load_data_from_override(self, source, target, key):
         """Append override data in self.compose.
 
-        Example Compose
+        Example Compose::
         ---------------
         core:
             build:
@@ -163,7 +165,7 @@ class ConfigTemplate(ABC):
             ports:
              - "8080:80"
 
-        Example override
+        Example override::
         ----------------
         core:
             build:
@@ -176,7 +178,7 @@ class ConfigTemplate(ABC):
             ports:
                 - "9000:80"
 
-        Final Result
+        Final Result::
         ------------
         core:
             build:

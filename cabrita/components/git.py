@@ -21,10 +21,9 @@ ARROW_DOWN = u"↓"
 class GitDirection(Enum):
     """Git direction for branch evaluation.
 
-    Options
-    -------
-        ahead: check for commits ahead branch
-        behind: check for commits behind branch
+    Options:
+        * **ahead**: check for commits ahead branch
+        * **behind**: check for commits behind branch
     """
 
     ahead = 1
@@ -45,7 +44,9 @@ class GitInspect(InspectTemplate):
         """Check if branch is "dirty".
 
         Ie.: has non-committed modifications.
+
         :param path: path for branch
+
         :return: bool
         """
         if not path:
@@ -60,7 +61,9 @@ class GitInspect(InspectTemplate):
         """Get last tag and most recent commit hash from path.
 
         :param path: path to search
+
         :param show_branch: check if add branch name to data
+
         :return: string
         """
         git_tag = self.run(
@@ -86,6 +89,7 @@ class GitInspect(InspectTemplate):
         """Return git revision data from service.
 
         :param service: service name as defined in docker-compose yml.
+
         :return: string
         """
         if self.compose.is_image(service):
@@ -97,6 +101,7 @@ class GitInspect(InspectTemplate):
         """Check if service need pull and return status.
 
         :param path: path to search.
+
         :return: string
         """
         if not os.path.isdir(os.path.join(path, '.git')):
@@ -123,6 +128,7 @@ class GitInspect(InspectTemplate):
         From this, try to find the relative diff between this branch and target branch
 
         :param service: service name as defined in docker-compose yml.
+
         :return: None
         """
         if self.compose.is_image(service):
@@ -162,6 +168,7 @@ class GitInspect(InspectTemplate):
         """Return number of commits behind or ahead for target branch on local branch.
 
         :param branch: current branch name
+
         :return: typle (int, int)
         """
         if self.target_branch and \
@@ -185,6 +192,7 @@ class GitInspect(InspectTemplate):
         """Get active branch name.
 
         :param path: path to search
+
         :return: string
         """
         if not path:
@@ -200,6 +208,7 @@ class GitInspect(InspectTemplate):
         """Abbreviate branch name.
 
         :param full_name: full branch name
+
         :return: string
         """
         name = full_name.split("/")[-1]
@@ -212,7 +221,9 @@ class GitInspect(InspectTemplate):
         """Get number of commits in local branch for informed direction.
 
         :param path: path to search
+
         :param direction: git direction for commits
+
         :return: int
         """
         task = "cd {} && git status -bs --porcelain".format(path)
@@ -233,8 +244,11 @@ class GitInspect(InspectTemplate):
         """Get number of commits based on target branch for informed direction.
 
         :param path: path to search
+
         :param name: branch name
+
         :param direction: git direction for commits
+
         :return: int
         """
         task = "cd {} && git log {}..{} --oneline 2>/dev/null".format(

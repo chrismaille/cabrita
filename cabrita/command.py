@@ -2,10 +2,11 @@
 Command module.
 
 This module has the CabritaCommand class, which is responsible for:
-    1. Load and check for valid cabrita.yml file
-    2. Load and check for valid docker-compose.yml files
-    3. Generate and add docker services to boxes
-    4. Generate and add watchers to dashboard
+
+1. Load and check for valid cabrita.yml file
+2. Load and check for valid docker-compose.yml files
+3. Generate and add docker services to boxes
+4. Generate and add watchers to dashboard
 """
 import os
 import sys
@@ -94,6 +95,7 @@ class CabritaCommand:
         The 'main' box are the last to be processed, because this
         box will include any non-ignored service which aren't
         included in any box before.
+
         :return: None
         """
         included_services = []  # type: List[str]
