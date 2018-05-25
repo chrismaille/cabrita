@@ -5,7 +5,7 @@ This module has the Box Class, which is the building block for dashboards.
 Each box updates his data in a separate thread in Python.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from buzio import formatStr
 from dashing import dashing
@@ -48,13 +48,13 @@ class Box:
                  docker: DockerInspect = None) -> None:
         """Init class."""
         self.last_update = datetime.now()
-        self.data = {}
+        self.data = {}  # type: Dict[Any, Any]
         self.compose = compose
         self.git = git
         self.docker = docker
         self._background_color = background_color.value
-        self._services = []
-        self.data_inspected_from_service = {}
+        self._services = []  # type: List[str]
+        self.data_inspected_from_service = {}  # type: Dict[Any, Any]
         self._widget = dashing.Text("Fetching data...", color=6, border_color=5,
                                     background_color=background_color.value)
 

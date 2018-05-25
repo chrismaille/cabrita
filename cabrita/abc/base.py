@@ -16,9 +16,8 @@ InspectTemplate
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import Hashable
 from datetime import datetime, timedelta
-from typing import Union, Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple
 
 import yaml
 from buzio import console
@@ -29,8 +28,6 @@ from cabrita.abc.utils import run_command
 
 class ConfigTemplate(ABC):
     """Abstract class for processing yaml files."""
-
-    compose_data = Union[Union[Dict[Hashable, Any], List[Any], None], Any]
 
     def __init__(self) -> None:
         """Initialize class.
@@ -102,8 +99,8 @@ class ConfigTemplate(ABC):
                     self.full_path = get_path(path, base_path)
                     self.console.info("Reading {}".format(self.full_path))
                     with open(self.full_path, 'r') as file:
-                        self.compose_data = yaml.load(file.read())  # type: dict
-                        for key in self.compose_data:
+                        self.compose_data = yaml.load(file.read())
+                        for key in self.compose_data:  # type: ignore
                             self._convert_lists(self.compose_data, key)
                         self.compose_data_list.append(self.compose_data)
                 except FileNotFoundError as exc:
@@ -221,7 +218,7 @@ class ConfigTemplate(ABC):
 class InspectTemplate(ABC):
     """Abstract class for compose service inspectors."""
 
-    def __init__(self, compose: ConfigTemplate, interval: int) -> None:
+    def __init__(self, compose, interval: int) -> None:
         """Initialize class.
 
         :param
@@ -243,7 +240,7 @@ class InspectTemplate(ABC):
         self._status = {}  # type: dict
         self.interval = interval
         self.last_update = datetime.now() - timedelta(seconds=self.interval)
-        self.default_data = None
+        self.default_data = {}  # type: dict
 
     @abstractmethod
     def inspect(self, service: str) -> None:
@@ -256,7 +253,7 @@ class InspectTemplate(ABC):
         seconds_elapsed = (datetime.now() - self.last_update).total_seconds()
         return seconds_elapsed >= self.interval
 
-    def status(self, service) -> Union[dict, str]:
+    def status(self, service):
         """Return service status.
 
         If can update, start fetching new data calling self.inspect method.
@@ -264,7 +261,7 @@ class InspectTemplate(ABC):
         :param service:
             docker service name
         :return:
-            dict or string. If not fetch data yet send default widget.
+            dict or dashing obj. If not fetch data yet send default widget.
         """
         if self.can_update:
             self.inspect(service)

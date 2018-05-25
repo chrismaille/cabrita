@@ -27,7 +27,7 @@ def get_sentry_client() -> Optional[Client]:
 def run_command(
         task,
         get_stdout=False,
-        run_stdout=False) -> Union[bool, str]:
+        run_stdout=False):
     """Run subprocess command.
 
     Args:

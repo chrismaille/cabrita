@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 from multiprocessing import TimeoutError
 from multiprocessing.pool import Pool
-from typing import Union
+from typing import Union, List
 
 from blessed import Terminal
 from buzio import console, formatStr
@@ -27,8 +27,8 @@ class Dashboard:
 
     def __init__(self, config: Config) -> None:
         """Init class."""
-        self.small_boxes = []
-        self.large_boxes = []
+        self.small_boxes = []  # type: List[dashing.Text]
+        self.large_boxes = []  # type: List[dashing.Text]
         self.compose_watch = None  # type: dashing.Text
         self.user_watches = None  # type: dashing.Text
         self.system_watch = None  # type: dashing.VSplit

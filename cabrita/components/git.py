@@ -38,8 +38,8 @@ class GitInspect(InspectTemplate):
         """Init class."""
         super(GitInspect, self).__init__(compose, interval)
         self.target_branch = target_branch
-        self.default_data = ""
-        self.path = None
+        self.default_data = None
+        self.path = None  # type: str
 
     def branch_is_dirty(self, path: str = None) -> bool:
         """Check if branch is "dirty".

@@ -10,6 +10,7 @@ This module contains the following classes:
 import os
 import re
 from datetime import datetime, timedelta
+from typing import Dict, Any, List
 
 import psutil
 from buzio import formatStr
@@ -23,10 +24,10 @@ from cabrita.components.box import Box
 class Watch(Box):
     """Watch class."""
 
-    _interval = 30
+    _interval = 30.0
 
     @property
-    def interval(self):
+    def interval(self) -> float:
         """Return interval in seconds for each update.
 
         Default: 30 seconds.
@@ -36,7 +37,7 @@ class Watch(Box):
 
     @interval.setter
     def interval(self, value):
-        self._interval = value
+        self._interval = float(value)
 
     def _execute(self) -> None:
         """Execute method for the class.
@@ -129,7 +130,7 @@ class UserWatch(Watch):
         for watch in self.ping:
             self._execute_watch('ping', watch)
 
-        table_header = []
+        table_header = []  # type: List[str]
         file_lines = [
             ("File", value[0], value[1])
             for key, value in self.result['file'].items()

@@ -9,6 +9,7 @@ This module has the CabritaCommand class, which is responsible for:
 """
 import os
 import sys
+from typing import List
 
 from cabrita.components.box import Box
 from cabrita.components.config import Config, Compose

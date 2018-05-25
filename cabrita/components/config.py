@@ -10,7 +10,7 @@ This module has:
 import math
 import os
 import shutil
-from typing import List, Union, Optional
+from typing import List, Optional, Any
 
 from buzio import console
 
@@ -395,7 +395,7 @@ class Compose(ConfigTemplate):
         path = data.get('context') if isinstance(data, dict) else data
         return get_path(path, self.base_path)
 
-    def get_from_service(self, service_name: str, key: str) -> Optional[Union[dict, str, List]]:
+    def get_from_service(self, service_name: str, key: str) -> Any:
         """Get value from key for informed service.
 
         Example: get_from_service("flower", "ports") returns ["5555"]
