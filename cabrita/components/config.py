@@ -339,7 +339,9 @@ class Config(ConfigTemplate):
         columns, lines = shutil.get_terminal_size()
         max_services_per_box = lines - 10
         num_of_boxes = int(math.ceil(len(service_list) / max_services_per_box)) or 1
-        logger.debug("Number of Boxes: {}".format(num_of_boxes))
+        if num_of_boxes == 1:
+            max_services_per_box = len(service_list)
+        logger.debug("Number of Boxes: {}. Max services per box: {}".format(num_of_boxes, max_services_per_box))
         i = 0
         for box_num in range(num_of_boxes):
             services_in_box = []  # type: List[str]
