@@ -8,10 +8,10 @@ Welcome to Cabrita's documentation!
 
 .. image:: https://img.shields.io/pypi/v/cabrita.svg
    :target: https://pypi.python.org/pypi/cabrita
-.. image:: https://travis-ci.org/chrismaille/buzio.svg?branch=master
-    :target: https://travis-ci.org/chrismaille/buzio
-.. image:: https://img.shields.io/pypi/pyversions/buzio.svg
-   :target: https://pypi.python.org/pypi/buzio
+.. image:: https://travis-ci.org/chrismaille/cabrita.svg?branch=master
+    :target: https://travis-ci.org/chrismaille/cabrita
+.. image:: https://img.shields.io/pypi/pyversions/cabrita.svg
+   :target: https://pypi.python.org/pypi/cabrita
 .. image:: https://coveralls.io/repos/github/chrismaille/buzio/badge.svg?branch=master
 	:target: https://coveralls.io/github/chrismaille/buzio?branch=master
 .. image:: https://readthedocs.org/projects/buzio/badge/?version=latest

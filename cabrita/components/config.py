@@ -7,6 +7,7 @@ This module has:
     The **Compose class**, which is responsible for
     handling docker-compose data from yamls.
 """
+import logging
 import math
 import os
 import shutil
@@ -18,6 +19,8 @@ from cabrita.abc.base import ConfigTemplate
 from cabrita.abc.utils import get_path
 from cabrita.components import BoxColor
 
+
+logger = logging.getLogger(__name__)
 
 class Config(ConfigTemplate):
     """Cabrita Configuration main class."""
@@ -335,7 +338,8 @@ class Config(ConfigTemplate):
 
         columns, lines = shutil.get_terminal_size()
         max_services_per_box = lines - 10
-        num_of_boxes = int(math.ceil(len(service_list) / max_services_per_box))
+        num_of_boxes = int(math.ceil(len(service_list) / max_services_per_box)) or 1
+        logger.debug("Number of Boxes: {}".format(num_of_boxes))
         i = 0
         for box_num in range(num_of_boxes):
             services_in_box = []  # type: List[str]
