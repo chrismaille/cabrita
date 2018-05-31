@@ -10,8 +10,9 @@ This module has the CabritaCommand class, which is responsible for:
 """
 import os
 import sys
-from typing import List
+from typing import List, Optional
 
+from cabrita.components import BoxColor
 from cabrita.components.box import Box
 from cabrita.components.config import Config, Compose
 from cabrita.components.dashboard import Dashboard
@@ -23,7 +24,8 @@ from cabrita.components.watchers import DockerComposeWatch, SystemWatch, UserWat
 class CabritaCommand:
     """Cabrita Command class."""
 
-    def __init__(self, cabrita_path: str, compose_path: tuple, version: str = "dev") -> None:
+    def __init__(self, cabrita_path: str, compose_path: tuple,
+                 background_color: Optional[str] = "black", version: str = "dev") -> None:
         """Init class."""
         self.version = version
         self.cabrita_path = cabrita_path
@@ -33,6 +35,15 @@ class CabritaCommand:
         self.config.manual_compose_paths = list(compose_path)
         self.compose = None  # type: Compose
         self.dashboard = None  # type: Dashboard
+        self._background_color = background_color
+
+    @property
+    def background_color(self):
+        """Return Background Color enum.
+
+        :return: BoxColor instance
+        """
+        return getattr(BoxColor, self._background_color) if self._background_color else self.config.background_color
 
     @property
     def has_a_valid_config(self) -> bool:
@@ -75,16 +86,16 @@ class CabritaCommand:
             compose=self.compose
         )
         self.dashboard.compose_watch = DockerComposeWatch(
-            background_color=self.config.background_color,
+            background_color=self.background_color,
             git=git,
             config=self.config,
             version=self.version
         )
         self.dashboard.system_watch = SystemWatch(
-            background_color=self.config.background_color
+            background_color=self.background_color
         )
         self.dashboard.user_watches = UserWatch(
-            background_color=self.config.background_color,
+            background_color=self.background_color,
             git=git,
             config=self.config
         )
@@ -126,7 +137,7 @@ class CabritaCommand:
                 compose=self.compose,
                 docker=docker,
                 git=git,
-                background_color=self.config.background_color
+                background_color=self.background_color
             )
             box.services = services_in_box
             box.load_data(box_data)

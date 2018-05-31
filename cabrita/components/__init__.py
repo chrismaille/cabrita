@@ -10,12 +10,15 @@ This package has the cabrita components for:
 | watchers = the Watch class (the collection of internal and user watchers for the dashboard
 """
 from enum import Enum
+from typing import List
 
 
 class BoxColor(Enum):
     """Enum using `Blessing`_ Colors values.
 
     .. _Blessing: https://pypi.python.org/pypi/blessings/
+
+    Currently not working correctly.
 
     ======= ====== ======
     Color   Normal Bright
@@ -38,3 +41,11 @@ class BoxColor(Enum):
     cyan = 14
     yellow = 11
     white = 7
+
+    @classmethod
+    def available_colors(cls) -> List[str]:
+        """Return available colors names.
+
+        :return: List
+        """
+        return sorted(cls.__members__)

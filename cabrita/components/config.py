@@ -242,7 +242,7 @@ class Config(ConfigTemplate):
             ret = False
 
         if self.data.get('background_color') and self.data.get('background_color') not in BoxColor.__members__:
-            self.console.error('Valid background colors are: {}'.format(", ".join(sorted(BoxColor.__members__))))
+            self.console.error('Valid background colors are: {}'.format(", ".join(BoxColor.available_colors())))
             ret = False
 
         if not self.data.get('compose_files'):

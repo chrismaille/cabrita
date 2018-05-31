@@ -7,6 +7,7 @@ from buzio import console
 from cabrita import __version__
 from cabrita.abc.utils import get_sentry_client
 from cabrita.command import CabritaCommand
+from cabrita.components import BoxColor
 from cabrita.versions import check_version
 
 
@@ -17,12 +18,18 @@ from cabrita.versions import check_version
     default=None,
     help='Full path for configuration file.',
     type=click.Path())
+@click.option(
+    '--color',
+    default=None,
+    help='Dashboard color (available options: {}).'.format(",".join(BoxColor.available_colors())),
+    type=click.Choice(BoxColor.available_colors())
+    )
 @click.argument(
     'compose_path',
     type=click.Path(exists=True),
     nargs=-1
 )
-def run(path, compose_path):
+def run(path, color, compose_path):
     """Run main command for cabrita.
 
     1. Check version
@@ -38,7 +45,8 @@ def run(path, compose_path):
         command = CabritaCommand(
             cabrita_path=path,
             compose_path=compose_path,
-            version=version
+            version=version,
+            background_color=color
         )
         if not command.has_a_valid_config:
             sys.exit(1)

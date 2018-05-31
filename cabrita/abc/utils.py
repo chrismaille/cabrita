@@ -2,7 +2,7 @@
 import os
 import re
 import subprocess
-from typing import Union, Optional, Sequence
+from typing import Optional
 
 from buzio import formatStr
 from raven import Client
