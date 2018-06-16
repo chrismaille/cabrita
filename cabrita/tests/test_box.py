@@ -130,7 +130,7 @@ class TestBox(TestCase):
 
     def test__get_headers(self):
         test_headers = self.box._get_headers()
-        self.assertListEqual(test_headers, ['Service', 'Status', 'Revision', 'Port', 'Git', 'Worker'])
+        self.assertListEqual(test_headers, ['Service', 'Status', 'Commit', 'Port', 'Branch', 'Worker'])
 
     def test__append_ports_in_field(self):
         self.box.run()
@@ -148,7 +148,7 @@ class TestBox(TestCase):
 
     def test_run(self):
         test_result = \
-            "Service        Status    Revision      Port    Git          Worker\n" \
+            "Service        Status    Commit        Port    Branch       Worker\n" \
             "-------------  --------  ------------  ------  -----------  --------\n" \
             "[32mdjango-worker[22m  [32mRunning[22m   [36m " \
             "[22m[37m[2mUsing Image[22m  [32m↘ 8085[22m  Using Image  [32mRunning[22m"

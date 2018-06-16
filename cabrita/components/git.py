@@ -81,8 +81,12 @@ class GitInspect(InspectTemplate):
             git_commit_data = "⑂ {}@{}".format(git_branch, str(git_hash).replace('\n', ''))
         else:
             git_commit_data = "⑂ {}".format(str(git_hash).replace('\n', ''))
-        git_status = u"✎ {} {}".format(
-            str(git_tag).replace('\n', '')[:10], git_commit_data) if git_tag else git_commit_data
+
+        if git_tag:
+            git_status = u"✎ {}".format(str(git_tag).replace('\n', '')[:15])
+        else:
+            git_status = git_commit_data
+
         return git_status
 
     def get_git_revision(self, service):

@@ -109,9 +109,10 @@ class DockerInspect(InspectTemplate):
             text_style = result_list[0][1]
             text_theme = result_list[0][2]
         else:
-            service_status = "{} x{}".format(
-                Counter([result[0] for result in result_list]).most_common()[0][0],
-                len(result_list)
+            stats = Counter([result[0] for result in result_list]).most_common()[0][0]
+            service_status = "{}{}".format(
+                stats,
+                " x{}".format(len(result_list)) if 'exited' not in stats.lower() else ""
             )
             text_style = Counter([result[1] for result in result_list]).most_common()[0][0]
             text_theme = Counter([result[2] for result in result_list]).most_common()[0][0]

@@ -48,13 +48,13 @@ class TestGitInspect(TestCase):
     def test_get_git_revision_from_path(self, *mocks):
         self.git.run = mocks[0]
         test_string = self.git.get_git_revision_from_path(path='/', show_branch=True)
-        self.assertEqual(test_string, u'✎ 2.0.1 ⑂ develop@457ac8c')
+        self.assertEqual(test_string, u'✎ 2.0.1')
 
     @mock.patch('cabrita.abc.utils.run_command', side_effect=return_git_result)
     def test_get_git_revision(self, *mocks):
         self.git.run = mocks[0]
         test_revision = self.git.get_git_revision('django')
-        self.assertEqual(test_revision, u'✎ 2.0.1 ⑂ 457ac8c')
+        self.assertEqual(test_revision, u'✎ 2.0.1')
 
     @mock.patch('os.path.isdir', return_value=True)
     @mock.patch('cabrita.abc.utils.run_command', side_effect=return_git_result)

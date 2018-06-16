@@ -246,11 +246,11 @@ class Box:
         """
         table_header = ['Service', 'Status']
         if self.show_revision:
-            table_header += ['Revision']
+            table_header += ['Commit']
         if self.port_view == PortView.column:
             table_header += ['Port']
         if self.show_git:
-            table_header += ['Git']
+            table_header += ['Branch']
         if self.categories:
             table_header += self.categories
         return table_header
