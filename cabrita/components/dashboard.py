@@ -146,6 +146,8 @@ class Dashboard:
             raise
         except TimeoutError:
             print(formatStr.error("TIMEOUT WHILE REFRESHING DATA..."), file=sys.stderr)
+        except AttributeError:
+            print(formatStr.error("ERROR DURING REFRESH. IF PERSISTS PLEASE RESTART..."), file=sys.stderr)
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
         """Make dashboard layout, using the 'layout' parameter from yml.
