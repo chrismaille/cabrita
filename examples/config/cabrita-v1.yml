@@ -1,0 +1,47 @@
+version: 1
+layout: horizontal
+interval: 2
+docker-compose:
+  path: $TEST_PROJECT_PATH
+  name: docker-compose.yml
+box:
+  all:
+    catch_all: true
+    name: Services
+    size: big
+    target_branch: origin/staging
+    show_ports: column
+  workers:
+    name: Workers
+    size: big
+    show_git: false
+    show_ports: name
+    list_only:
+      - worker
+      - redis
+    categories:
+      - Redis
+  devops:
+    name: Devops
+    size: small
+    target_branch: origin/master
+    show_ports: column
+    list_only:
+      - Postgres
+fetch_each: 30
+ignore:
+  - portainer
+check:
+  ngrok: true
+status_file_path: $TEST_PROJECT_PATH/config
+build_check:
+  - Dockerfile
+  - Dockerfile_dev
+build_check_using_git:
+  - flask
+files:
+  cabrita:
+    name: cabrita.yml
+    dest_path: $TEST_PROJECT_PATH/config
+    source_path: $TEST_PROJECT_PATH
+    source_name: cabrita-v1.yml

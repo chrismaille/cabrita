@@ -2,40 +2,44 @@
 
 Checks version number for upgrades in PyPI
 """
-import requests
 import sys
-from buzio import console
+from typing import Optional, List
+
+import requests
+from buzio import console, formatStr
 from pkg_resources import parse_version
+from requests import RequestException
+
 from cabrita import __version__
 
 
-def versions():
-    """Function: versions.
+def versions() -> Optional[List[str]]:
+    """Return the version list data from PyPI.
 
-    Summary: Request all versions registered in PyPI
-    Returns: list
+    :return: list
     """
     console.info("Checking for updates...")
     url = "https://pypi.python.org/pypi/cabrita/json"
-    data = None
-    versions = None
+    versions_list = None
     try:
         ret = requests.get(url, timeout=1)
         data = ret.json()
-    except BaseException:
-        pass
+    except RequestException:
+        return None
     if data:
-        versions = list(data["releases"].keys())
-        versions.sort(key=parse_version)
-    return versions
+        versions_list = list(data["releases"].keys())
+        versions_list.sort(key=parse_version)
+    return versions_list
 
 
-def check_version():
-    """Function: check_version.
+def check_version() -> str:
+    """Check if it is the latest version.
 
-    Summary: Compares actual version vs last known
-    version in PyPI for upgrades
-    Returns: Bool = true if updated
+    Compares actual version vs last known
+    version in PyPI, for upgrades
+
+    :return:
+        string
     """
     last_version = __version__
     version_data = versions()
@@ -43,7 +47,7 @@ def check_version():
         last_version = version_data[-1]
     if parse_version(last_version) > parse_version(__version__) and \
             ("rc" not in last_version and
-                "b" not in last_version and "dev" not in last_version):
+             "b" not in last_version and "dev" not in last_version):
         console.warning(
             "You're running a outdated version.\n" +
             "Last Version: {}\n".format(last_version)
@@ -56,3 +60,6 @@ def check_version():
             else:
                 console.error("\nThere is a error during upgrade. Please try again.")
             sys.exit(0)
+        else:
+            return formatStr.error('{} (update available)'.format(last_version), use_prefix=False)
+    return formatStr.success(last_version, use_prefix=False)
