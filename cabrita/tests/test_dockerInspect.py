@@ -27,8 +27,14 @@ class TestDockerInspect(TestCase):
         command.prepare_dashboard()
         cls.docker = command.dashboard.all_boxes[3].docker
 
-    @mock.patch('cabrita.abc.utils.run_command', return_value=INSPECT_DJANGO_CONTAINER)
     def test_inspect(self, *mocks):
+
+        def _return_inspect_data(*args, **kwargs):
+            if 'examples_django_1' in args[0]:
+                return INSPECT_DJANGO_CONTAINER
+            else:
+                return None
+
         result_dict = {
             'name': 'django',
             'ports': '↘ 8081 8090',
@@ -36,7 +42,7 @@ class TestDockerInspect(TestCase):
             'style': 'success',
             'theme': None
         }
-        self.docker.run = mocks[0]
+        self.docker.run = _return_inspect_data
         self.docker.inspect('django')
         self.assertDictEqual(self.docker.status('django'), result_dict)
 

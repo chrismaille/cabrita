@@ -10,20 +10,26 @@ services:
       - DEBUG=false
     volumes:
       - ./django_app:/opt/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       backend:
         aliases:
           - django
   django-worker:
     image: django:dev
-    ports:
-      - '8085:8080'
     depends_on:
       - django
       - redis
     volumes:
       - ${TEST_PROJECT_PATH}/django_app:/opt/app
     command: celery -A django_app -b redis://redis:6379 worker -l info
+    deploy:
+      mode: replicated
+      replicas: 3
     networks:
       backend:
         aliases:

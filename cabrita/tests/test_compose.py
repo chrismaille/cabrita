@@ -40,11 +40,17 @@ class TestCompose(TestCase):
                             'aliases': ['django']
                         }
                     },
-                    'volumes': ['./django_app:/opt/app']
+                    'volumes': ['./django_app:/opt/app'],
+                    'healthcheck': {
+                        'test': ["CMD", "curl", "-f", "http://localhost:8080"],
+                        'interval': "30s",
+                        'timeout': "5s",
+                        'retries': 3
+                    }
                 },
                 'django-worker': {
                     'image': 'django:dev',
-                    'ports': ['8085:8080'],
+                    'deploy': {'mode': 'replicated', 'replicas': 3},
                     'depends_on': ['django', 'redis', 'postgres'],
                     'volumes': ['${TEST_PROJECT_PATH}/django_app:/opt/app'],
                     'command': 'celery -A django_app -b redis://redis:6379 worker -l info',
@@ -67,7 +73,13 @@ class TestCompose(TestCase):
                             'aliases': ['flask']
                         }
                     },
-                    'environment': {'FLASK_APP': 'app.py', 'FLASK_ENV': 'development'}
+                    'environment': {'FLASK_APP': 'app.py', 'FLASK_ENV': 'development'},
+                    'healthcheck': {
+                        'test': ["CMD", "curl", "-f", "http://localhost:8000/health"],
+                        'interval': "30s",
+                        'timeout': "5s",
+                        'retries': 3
+                    }
                 },
                 'portainer': {
                     'image': 'portainer/portainer',

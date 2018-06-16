@@ -27,6 +27,11 @@ services:
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Always return error
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       backend:
         aliases:

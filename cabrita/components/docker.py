@@ -10,6 +10,7 @@ import json
 import os
 import re
 import time
+from collections import Counter
 from enum import Enum
 from typing import List, Tuple, Optional, Union
 
@@ -85,19 +86,35 @@ class DockerInspect(InspectTemplate):
 
         :return: None
         """
-        container_name = self._get_container_name(service)
-        inspect_data = self._get_inspect_data(container_name)
+        index = 1
+        all_containers_processed = False
+        result_list = []  # type: list
+        while not all_containers_processed:
+            container_name = self._get_container_name(service, index)
+            inspect_data = self._get_inspect_data(container_name)
 
-        if not inspect_data:
-            service_status = "Not Found"
-            text_style = "info"
-            text_theme = "dark"
-        elif self._need_build(service, inspect_data):
-            service_status = "NEED BUILD"
-            text_style = "error"
-            text_theme = None
+            if not inspect_data:
+                if not result_list:
+                    result_list.append(("Not Found", "info", "dark"))
+                all_containers_processed = True
+            elif self._need_build(service, inspect_data):
+                result_list.append(("NEED BUILD", "error", None))
+                index += 1
+            else:
+                result_list.append(self._define_status(inspect_data))
+                index += 1
+
+        if len(result_list) == 1:
+            service_status = result_list[0][0]
+            text_style = result_list[0][1]
+            text_theme = result_list[0][2]
         else:
-            service_status, text_style, text_theme = self._define_status(inspect_data)
+            service_status = "{} x{}".format(
+                Counter([result[0] for result in result_list]).most_common()[0][0],
+                len(result_list)
+            )
+            text_style = Counter([result[1] for result in result_list]).most_common()[0][0]
+            text_theme = Counter([result[2] for result in result_list]).most_common()[0][0]
 
         self._status[service] = {
             "name": service,
@@ -142,7 +159,7 @@ class DockerInspect(InspectTemplate):
 
         return service_string
 
-    def _get_container_name(self, service: str) -> str:
+    def _get_container_name(self, service: str, index: int = 1) -> str:
         """Return container name for informed service.
 
         Name can be retrieved from 'container_name' parameter in
@@ -159,7 +176,7 @@ class DockerInspect(InspectTemplate):
             # Generate default_name
             name = os.path.basename(os.path.dirname(self.compose.full_path))
             name = re.sub(r'[^A-Za-z0-9]+', '', name)
-            name = "{}_{}_1".format(name.lower(), service.lower())
+            name = "{}_{}_{}".format(name.lower(), service.lower(), index)
         return name
 
     def _get_inspect_data(self, service: str) -> dict:
@@ -185,8 +202,10 @@ class DockerInspect(InspectTemplate):
         """
         if inspect_state.get('Health', False) and \
                 inspect_state['Status'].lower() == 'running':
-            return inspect_state['Health']['Status'].title()
-        return inspect_state['Status'].title()
+            service_status = inspect_state['Health']['Status'].title()
+        else:
+            service_status = inspect_state['Status'].title()
+        return service_status
 
     @staticmethod
     def _get_style_and_theme_for_status(status: str, inspect_state: dict) -> Tuple[str, Union[str, None]]:
