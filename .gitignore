@@ -85,7 +85,6 @@ celerybeat-schedule
 # virtualenv
 .venv
 venv/
-venv*/
 ENV/
 
 # Spyder project settings
@@ -101,4 +100,4 @@ ENV/
 # mypy
 .mypy_cache/
 .idea
-db.sqlite*
+/examples/django_app/db.sqlite3

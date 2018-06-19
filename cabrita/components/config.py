@@ -56,7 +56,7 @@ class Config(ConfigTemplate):
 
         :return: str
         """
-        return self.data['layout']
+        return self.data.get('layout', 'horizontal')
 
     @property
     def boxes(self) -> dict:

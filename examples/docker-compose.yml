@@ -23,7 +23,7 @@ services:
     image: django:dev
     depends_on:
       - django
-      - redis
+      - django-redis
     volumes:
       - ${TEST_PROJECT_PATH}/django_app:/opt/app
     command: celery -A django_app -b redis://redis:6379 worker -l info
@@ -44,7 +44,7 @@ services:
       backend:
         aliases:
           - portainer
-  redis:
+  django-redis:
     image: redis:latest
     networks:
       backend:
