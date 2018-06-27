@@ -1,3 +1,3 @@
-[submodule "cabrita/examples"]
-	path = cabrita/examples
+[submodule "examples"]
+	path = examples
 	url = https://github.com/chrismaille/sheep.git

@@ -1,4 +1,3 @@
-import os
 from unittest import TestCase, mock
 
 import yaml
@@ -49,7 +48,7 @@ class TestBox(TestCase):
     @mock.patch('cabrita.components.docker.DockerInspect')
     def setUp(self, *args):
         compose_mock = args[2]
-        with open(os.path.join('..', '..', "sheep/docker-compose.yml")) as file:
+        with open("./examples/docker-compose.yml") as file:
             compose_data = yaml.load(file.read())
         compose_mock.services = compose_data['services']
 
