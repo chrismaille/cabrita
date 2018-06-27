@@ -35,9 +35,8 @@ To customize cabrita you will need to create a special file, called
 containers will show in each box and what info these boxes will show for
 each them.
 
-For example, copy and paste this yaml and save the
-`cabrita.yml` in the same directory where your `docker-compose.yml` is
-located:
+For example, copy and paste this yaml and save the `cabrita.yml` in the
+same directory where your `docker-compose.yml` is located:
 
 ```yaml
 version: 2
@@ -52,7 +51,26 @@ boxes:
     port_detail: both
 ```
 
-We are setup one one box, with all services inside. This is the main box (`main: true`), and all cabrita.yml file must have on main box.
-The box title is now "My Services" and ports column show now both internal and external ports.
+This file will create a dashboard called *My Docker Project*, which will
+read all services from both `docker-compose.yml` files and add them to
+the box called *My Services*.
 
+This is the main box (`main: true`), which means all docker services
+which are not included in any other box, will be added here. The only
+configuration on this box for now, is the `port_detail` option which
+will show on dashboard both internal and external ports for running
+services.
+
+To use this file, use the `--path` option for cabrita command line. You
+can also define the `CABRITA_PATH` environment variable for this path.
+
+In your example:
+
+```bash
+# cd to /examples
+$ TEST_PROJECT_PATH=$pwd docker-compose up -d
+$ cabrita --path cabrita.yml
+```
+
+![Image](source/assets/c1.png)
 

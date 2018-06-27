@@ -148,15 +148,18 @@ class DockerInspect(InspectTemplate):
             else:
                 internal_ports.append("{}".format(port))
 
+        external_ports = set(external_ports)
+        internal_ports = set(internal_ports)
+
         if internal_ports == external_ports:
             return '{} {}'.format(BOTH, " ".join(external_ports))
 
         if self.port_detail == PortDetail.external:
-            service_string = '{} {}'.format(OUT, " ".join(external_ports))
+            service_string = '{} {}'.format(OUT, "/".join(external_ports))
         elif self.port_detail == PortDetail.internal:
-            service_string = '{} {}'.format(IN, " ".join(internal_ports))
+            service_string = '{} {}'.format(IN, "/".join(internal_ports))
         else:
-            service_string = '{} {} {} {}'.format(OUT, " ".join(external_ports), IN, " ".join(internal_ports))
+            service_string = '{} {} {} {}'.format(OUT, "/".join(external_ports), IN, "/".join(internal_ports))
 
         return service_string
 
