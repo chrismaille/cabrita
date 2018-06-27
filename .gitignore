@@ -99,5 +99,4 @@ ENV/
 
 # mypy
 .mypy_cache/
-.idea
 /examples/django_app/db.sqlite3
