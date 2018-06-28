@@ -68,7 +68,10 @@ class CabritaCommand:
         """
         self.compose = Compose()
         for compose in self.config.compose_files:
-            self.compose.add_path(compose, base_path=os.path.dirname(compose))
+            base_compose_path = os.path.dirname(compose)
+            if "." in base_compose_path:
+                base_compose_path = self.config.base_path
+            self.compose.add_path(compose, base_path=base_compose_path)
             if not self.compose.is_valid:
                 sys.exit(1)
         self.compose.load_file_data()
