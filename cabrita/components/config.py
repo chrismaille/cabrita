@@ -129,8 +129,8 @@ class Config(ConfigTemplate):
         return getattr(self, "_check_v{}".format(self.version))(start_here=True)
 
     def _check_for_compose_file(self) -> list:
-        """
-        Retrieve compose file list from manual upload or current directory.
+        """Retrieve compose file list from manual upload or current directory.
+
         If docker-compose.override.yml exits put a the end of the list.
 
         :return: List
@@ -469,12 +469,14 @@ class Compose(ConfigTemplate):
         :return:
             List, String, Dict or None
         """
-        service = [
+        service_list = [
             self.data['services'][s]
             for s in self.services
             if service_name.lower() == s
-        ][0]
-        return service.get(key, None)
+        ]
+        if service_list:
+            service = service_list[0]
+            return service.get(key, None)
 
     def get_ports_from_service(self, service: str) -> Optional[List]:
         """Return ports from service.

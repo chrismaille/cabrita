@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Tox" type="Tox" factoryName="Tox">
+  <configuration default="false" name="Run Tox" type="Tox" factoryName="Tox">
     <module name="cabrita" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />

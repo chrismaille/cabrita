@@ -148,8 +148,8 @@ class DockerInspect(InspectTemplate):
             else:
                 internal_ports.append("{}".format(port))
 
-        external_ports = set(external_ports)
-        internal_ports = set(internal_ports)
+        external_ports = sorted(set(external_ports))
+        internal_ports = sorted(set(internal_ports))
 
         if internal_ports == external_ports:
             return '{} {}'.format(BOTH, " ".join(external_ports))

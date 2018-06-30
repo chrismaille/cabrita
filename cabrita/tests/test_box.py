@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from unittest import TestCase, mock
 
 import yaml
@@ -69,8 +71,8 @@ class TestBox(TestCase):
             {
                 'show_revision': True,
                 'port_view': PortView.column,
-                'categories': ['Worker'],
-                'includes': ['worker'],
+                'categories': ['worker'],
+                'includes': ['django'],
             }
         )
         self.box.services = ['django', 'django-worker']
@@ -137,26 +139,30 @@ class TestBox(TestCase):
         self.box.data['port_view'] = PortView.name
         test_name = self.box._append_ports_in_field('name')
         test_status = self.box._append_ports_in_field('status')
-        self.assertEqual(test_name, u"django-worker (↘ 8085)")
+        self.assertEqual(test_name, u"django (↘ 8081)")
         self.assertEqual(test_status, "Running")
 
         self.box.data['port_view'] = PortView.status
         test_name = self.box._append_ports_in_field('name')
         test_status = self.box._append_ports_in_field('status')
-        self.assertEqual(test_name, "django-worker")
-        self.assertEqual(test_status, u"Running (↘ 8085)")
+        self.assertEqual(test_name, "django")
+        self.assertEqual(test_status, u"Running (↘ 8081)")
 
     def test_run(self):
         test_result = \
-            "Service        Status    Commit        Port    Branch       Worker\n" \
-            "-------------  --------  ------------  ------  -----------  --------\n" \
-            "[32mdjango-worker[22m  [32mRunning[22m   [36m " \
-            "[22m[37m[2mUsing Image[22m  [32m↘ 8085[22m  Using Image  [32mRunning[22m"
+            "Service    Status    Commit               Port    Branch      Worker\n" \
+            "---------  --------  -------------------  ------  ----------  --------\n" \
+            "[32mdjango[22m     [32mRunning[22m   [36m✎ 1.0.0 [22m[37m" \
+            "[2m⑂ abcd12345[22m  [32m↘ 8081[22m  master ↓ 1  [32mRunning[22m"
+
         self.box.run()
         self.assertEqual(self.box.widget.text, test_result)
 
     def test__get_service_category_data(self):
         self.box.run()
+        ret = self.box._get_service_category_data('django', 'worker')
+        self.assertIsNone(ret)
+        self.box._included_service_list = []
         ret = self.box._get_service_category_data('django', 'worker')
         self.assertEqual(ret, self.return_docker_status('django-worker'))
 

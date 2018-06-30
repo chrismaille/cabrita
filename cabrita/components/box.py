@@ -49,6 +49,7 @@ class Box:
     def __init__(self, background_color: BoxColor = BoxColor.black, compose: Compose = None, git: GitInspect = None,
                  docker: DockerInspect = None) -> None:
         """Init class."""
+        self._included_service_list = []  # type: list
         self.last_update = datetime.now()
         self.data = {}  # type: Dict[Any, Any]
         self.compose = compose
@@ -252,7 +253,8 @@ class Box:
         if self.show_git:
             table_header += ['Branch']
         if self.categories:
-            table_header += self.categories
+            capitalize_names = [category.title() for category in self.categories]
+            table_header += capitalize_names
         return table_header
 
     def _append_ports_in_field(self, field) -> str:
@@ -287,23 +289,20 @@ class Box:
         # Define Headers
         table_header = self._get_headers()
 
-        # Get Services for Lines
+        # Check each service
         table_lines = []
-        main_category = None
-        striped_name = None
-        if self.includes and self.categories:
-            main_category = self.includes[0].lower()
-            services_in_line = [
-                s
-                for s in self.services
-                if main_category in s
-            ]
-        else:
-            services_in_line = self.services
+        service_list = self.services
+        for service in service_list:
+            if service in self._included_service_list:
+                continue
 
-        for service in services_in_line:
-            if main_category:
-                striped_name = service.replace(main_category, "").replace("-", "").replace("_", "")
+            can_skip = self.includes != []
+            for include in self.includes:
+                if include in service:
+                    can_skip = False
+
+            if can_skip:
+                continue
 
             self.data_inspected_from_service = self.docker.status(service)
 
@@ -329,8 +328,10 @@ class Box:
             if self.show_git:
                 table_data.append(self.git.status(service))
 
+            self._included_service_list.append(service)
+
             for category in self.categories:
-                category_data = self._get_service_category_data(striped_name, category)
+                category_data = self._get_service_category_data(service, category)
                 if not category_data:
                     table_data.append('--')
                 else:
@@ -351,12 +352,18 @@ class Box:
     def _get_service_category_data(self, service: str, category: str) -> Optional[dict]:
         """Find the service name + category service in compose data and return inspect docker data.
 
-        Example
-        -------
-            The service name is 'auth' and the category is 'worker'
-            The code will attempt to find the 'auth-worker' service inside compose data.
-            The Search are not case-sensitive and not will not match entire name. 'Auth-Worker1' will be found.
-            If find, return the docker inspect data for this service.
+        Example 1
+        ---------
+            Include option is "django" and the category option is 'worker'. Service name: django
+            First search is adding service name + category: django-worker
+
+        Example 2
+        ---------
+            Include option is "web" and the category option is 'worker'. Service name: django-web
+            Second search is removing include, add category: django-worker
+
+        The Search are not case-sensitive and not will not match entire name. 'Auth-Worker1' will be found.
+        If find, return the docker inspect data for this service.
 
         :param service: service name
 
@@ -366,14 +373,31 @@ class Box:
         """
         service_to_find = [
             s
-            for s in self.compose.services
+            for s in self.services
             if service.lower() in s and category.lower() in s
         ]
+
+        if not service_to_find and self.includes:
+            striped_name = ""
+            for include in self.includes:
+                if include.lower() in service:
+                    striped_name = service.replace(include.lower(), "")
+
+            if striped_name:
+                service_to_find = [
+                    s
+                    for s in self.compose.services
+                    if striped_name.lower() in s and category.lower() in s
+                ]
+
         if service_to_find:
-            service_data = self.docker.status(service_to_find[0])
-            return service_data
-        else:
-            return None
+            found_service = service_to_find[0]
+            if found_service not in self._included_service_list:
+                service_data = self.docker.status(found_service)
+                self._included_service_list.append(found_service)
+                return service_data
+
+        return None
 
     @staticmethod
     def format_revision(table_lines: list) -> list:

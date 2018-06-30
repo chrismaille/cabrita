@@ -37,7 +37,7 @@ class TestDockerInspect(TestCase):
 
         result_dict = {
             'name': 'django',
-            'ports': '↘ 8081 8090',
+            'ports': '↘ 8081/8090',
             'status': 'Running',
             'style': 'success',
             'theme': None
@@ -48,7 +48,7 @@ class TestDockerInspect(TestCase):
 
     def test__get_service_ports(self):
         test_ports = self.docker._get_service_ports('django')
-        self.assertEqual(test_ports, u'↘ 8081 8090')
+        self.assertEqual(test_ports, u'↘ 8081/8090')
 
     def test__get_container_name(self):
         test_name = self.docker._get_container_name('django')

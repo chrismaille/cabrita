@@ -131,7 +131,9 @@ class CabritaCommand:
             services_in_box = []
             for service in self.compose.services:
                 if service not in included_services and service not in self.config.ignore_services:
-                    for service_name in box_data.get('includes', []):
+                    services_list = set(
+                        [s.lower() for s in box_data.get('includes', []) + box_data.get('categories', [])])
+                    for service_name in services_list:
                         if service_name.lower() in service.lower():
                             services_in_box.append(service)
                             included_services.append(service)

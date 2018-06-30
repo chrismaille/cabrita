@@ -10,6 +10,7 @@ class TestDockerComposeWatch(TestCase):
 
     def setUp(self):
         inspector = MagicMock()
+        inspector.get_git_revision_from_path.return_value = "master"
         self.config = Config()
         self.config.add_path(LATEST_CONFIG_PATH)
         self.config.load_file_data()
@@ -18,9 +19,8 @@ class TestDockerComposeWatch(TestCase):
 
     def test__execute(self):
         response = \
-            "-----------------------  ---------------  -\n" \
-            "docker-compose           [33mBRANCH MODIFIED[22m  [36m [22m[37m[2m[22m\n" \
-            "docker-compose.override  [33mBRANCH MODIFIED[22m  [36m [22m[37m[2m[22m\n" \
-            "-----------------------  ---------------  -"
+            "-------------------------  ------  ----------------\n"\
+            "docker-compose (override)  master  [36m [22m[37m[2m[33mBranch modified[22m[22m\n"\
+            "-------------------------  ------  ----------------"
         self.watch._execute()
         self.assertEqual(self.watch._widget.text, response)

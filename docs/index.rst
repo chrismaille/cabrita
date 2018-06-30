@@ -30,9 +30,9 @@ Welcome to Cabrita's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   reference
-
-
+   tutorial
+   file_reference
+   api_reference
 
 Indices and tables
 ==================
@@ -40,3 +40,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
