@@ -205,7 +205,7 @@ class GitInspect(InspectTemplate):
             "cd {} && git branch | grep \"*\" 2>/dev/null".format(path),
             get_stdout=True
         )
-        return branch.replace("* ", "").replace("\n", "") if branch else ""
+        return branch.replace("* ", "").replace("\n", "").replace("(", "").replace(")", "") if branch else ""
 
     @staticmethod
     def _get_abbreviate_name(full_name) -> str:

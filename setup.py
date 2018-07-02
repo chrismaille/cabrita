@@ -45,7 +45,8 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development :: User Interfaces',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7'
     ],
     keywords='terminal tui docker compose dashboard',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),

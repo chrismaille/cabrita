@@ -76,12 +76,24 @@ class DockerComposeWatch(Watch):
         """
         table_lines = []
         for file in self.config.compose_files:
+            if 'override' in file:
+                continue
             full_path = self.config.get_compose_path(file, os.path.dirname(file))
             path = os.path.dirname(full_path)
             filename = os.path.splitext(os.path.basename(full_path))[0]
+
+            has_override = [
+                obj
+                for obj in self.config.compose_files
+                if 'override' in obj
+            ]
+            if has_override:
+                filename += u' (override)'
+
             if self.git.branch_is_dirty(path):
-                git_state = format_color("BRANCH MODIFIED", 'warning')
-                table_data = [filename, git_state, ""]
+                git_state = format_color("Branch modified", 'warning')
+                git_revision = self.git.get_git_revision_from_path(path, show_branch=True)
+                table_data = [filename, git_revision, git_state]
             else:
                 git_state = self.git.get_behind_state(path)
                 git_revision = self.git.get_git_revision_from_path(path, show_branch=True)

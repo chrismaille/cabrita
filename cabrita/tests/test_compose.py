@@ -30,7 +30,7 @@ class TestCompose(TestCase):
                     },
                     'image': 'django:dev',
                     'ports': ['8081:8080', '8090:8080'],
-                    'depends_on': ['postgres', 'redis'],
+                    'depends_on': ['postgres', 'django-redis'],
                     'command': 'python manage.py runserver 0.0.0.0:8080',
                     'environment': {
                         'DEBUG': "True"
@@ -51,7 +51,7 @@ class TestCompose(TestCase):
                 'django-worker': {
                     'image': 'django:dev',
                     'deploy': {'mode': 'replicated', 'replicas': 3},
-                    'depends_on': ['django', 'redis', 'postgres'],
+                    'depends_on': ['django', 'django-redis', 'postgres'],
                     'volumes': ['${TEST_PROJECT_PATH}/django_app:/opt/app'],
                     'command': 'celery -A django_app -b redis://redis:6379 worker -l info',
                     'networks': {
@@ -91,7 +91,7 @@ class TestCompose(TestCase):
                         }
                     }
                 },
-                'redis': {
+                'django-redis': {
                     'image': 'redis:latest',
                     'ports': ['6380:6379'],
                     'networks': {
@@ -130,7 +130,7 @@ class TestCompose(TestCase):
         ]
         self.assertEqual(len(compose_list), 6)
         for name in compose_list:
-            self.assertTrue(name in ['django', 'django-worker', 'portainer', 'redis', 'postgres', 'flask'])
+            self.assertTrue(name in ['django', 'django-worker', 'portainer', 'django-redis', 'postgres', 'flask'])
 
     def test_volumes(self):
         self.assertDictEqual(self.compose.volumes, {'postgres-app-data': None})

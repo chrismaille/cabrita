@@ -18,6 +18,7 @@ from colorama import Style
 from dashing import dashing
 from dashing.dashing import HSplit, VSplit
 
+from cabrita.abc.utils import get_sentry_client
 from cabrita.components.box import Box, update_box
 from cabrita.components.config import Config
 
@@ -146,8 +147,11 @@ class Dashboard:
             raise
         except TimeoutError:
             print(formatStr.error("TIMEOUT WHILE REFRESHING DATA..."), file=sys.stderr)
-        except AttributeError:
-            print(formatStr.error("ERROR DURING REFRESH. IF PERSISTS PLEASE RESTART..."), file=sys.stderr)
+        except Exception as exc:
+            print(formatStr.error("ERROR DURING UPDATE. IF PERSISTS PLEASE RESTART. ({})".format(exc)), file=sys.stderr)
+            client = get_sentry_client()
+            if client:
+                client.captureException()
 
     def _get_layout(self, term) -> Union[HSplit, VSplit]:
         """Make dashboard layout, using the 'layout' parameter from yml.

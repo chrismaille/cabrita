@@ -56,7 +56,7 @@ class Config(ConfigTemplate):
 
         :return: str
         """
-        return self.data['layout']
+        return self.data.get('layout', 'horizontal')
 
     @property
     def boxes(self) -> dict:
@@ -129,8 +129,9 @@ class Config(ConfigTemplate):
         return getattr(self, "_check_v{}".format(self.version))(start_here=True)
 
     def _check_for_compose_file(self) -> list:
-        """
-        Retrieve compose file list from manual upload or current directory.
+        """Retrieve compose file list from manual upload or current directory.
+
+        If docker-compose.override.yml exits put a the end of the list.
 
         :return: List
         """
@@ -150,6 +151,11 @@ class Config(ConfigTemplate):
             if os.path.isfile(compose_file_path):
                 console.info('Compose file found: {}'.format(compose_file_path))
                 compose_list.append(compose_file_path)
+
+        compose_file_list = [file for file in compose_list if 'override' in file]
+        if compose_file_list:
+            compose_list.remove(compose_file_list[0])
+            compose_list.append(compose_file_list[0])
 
         return compose_list
 
@@ -259,6 +265,11 @@ class Config(ConfigTemplate):
         self.data['compose_files'] = self._check_for_compose_file()
 
         ret = True
+
+        compose_override_list = [file for file in self.data['compose_files'] if 'override' in file]
+        if len(compose_override_list) > 1:
+            self.console.error('You must inform only one docker-compose.override.yml file')
+            ret = False
 
         if self.data.get('layout') and self.data.get('layout') not in ['horizontal', 'vertical']:
             self.console.error('Layout must be vertical or horizontal')
@@ -458,12 +469,14 @@ class Compose(ConfigTemplate):
         :return:
             List, String, Dict or None
         """
-        service = [
+        service_list = [
             self.data['services'][s]
             for s in self.services
             if service_name.lower() == s
-        ][0]
-        return service.get(key, None)
+        ]
+        if service_list:
+            service = service_list[0]
+            return service.get(key, None)
 
     def get_ports_from_service(self, service: str) -> Optional[List]:
         """Return ports from service.

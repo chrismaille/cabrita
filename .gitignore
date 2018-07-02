@@ -9,7 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
-build/
+docs/build/
 develop-eggs/
 dist/
 downloads/
@@ -85,8 +85,8 @@ celerybeat-schedule
 # virtualenv
 .venv
 venv/
-venv*/
 ENV/
+venv*/
 
 # Spyder project settings
 .spyderproject
@@ -100,5 +100,4 @@ ENV/
 
 # mypy
 .mypy_cache/
-.idea
-db.sqlite*
+/examples/django_app/db.sqlite3

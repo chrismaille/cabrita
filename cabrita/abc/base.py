@@ -81,7 +81,7 @@ class ConfigTemplate(ABC):
         """Add new path for list for each yaml file."""
         if path:
             if not self.base_path:
-                self.base_path = base_path
+                self.base_path = os.path.dirname(os.path.join(base_path, path))
             self.list_path.append((path, base_path))
 
     def load_file_data(self) -> None:

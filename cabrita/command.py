@@ -68,7 +68,10 @@ class CabritaCommand:
         """
         self.compose = Compose()
         for compose in self.config.compose_files:
-            self.compose.add_path(compose, base_path=os.path.dirname(compose))
+            base_compose_path = os.path.dirname(compose)
+            if "." in base_compose_path:
+                base_compose_path = self.config.base_path
+            self.compose.add_path(compose, base_path=base_compose_path)
             if not self.compose.is_valid:
                 sys.exit(1)
         self.compose.load_file_data()
@@ -128,7 +131,9 @@ class CabritaCommand:
             services_in_box = []
             for service in self.compose.services:
                 if service not in included_services and service not in self.config.ignore_services:
-                    for service_name in box_data.get('includes', []):
+                    services_list = set(
+                        [s.lower() for s in box_data.get('includes', []) + box_data.get('categories', [])])
+                    for service_name in services_list:
                         if service_name.lower() in service.lower():
                             services_in_box.append(service)
                             included_services.append(service)
