@@ -2,18 +2,18 @@ Cabrita Tutorial
 ----------------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Modules:
+:maxdepth: 2
+       :caption: Modules:
 
-Tutorial
+In-depth Customization
 ========
 
-To customize cabrita you can create a special file, called ``cabrita.yml``
+To customize cabrita you can create a yaml file, let's called ``cabrita.yml``
 to create or config _boxes_. You can select which docker containers will
 show in each box and what info these boxes will show for each service
 inside them.
 
-For example, copy and paste this yaml and save the ``cabrita.yml`` in the
+To understand his basic structure, copy and paste this yaml and save the ``cabrita.yml`` in the
 same directory where your `docker-compose.yml` is located:
 
 .. code-block:: yaml
@@ -29,7 +29,7 @@ same directory where your `docker-compose.yml` is located:
         name: My Services
 
 This file will create a dashboard called *My Docker Project*, which will
-read all services from the ``docker-compose.yml`` file and add them to the
+read all services from the ``docker-compose.yml`` file and add all of them to the
 box called *My Services*.
 
 This is the main box (``main: true``), which means all docker services
@@ -42,7 +42,7 @@ Using the our docker-compose in ``/examples`` folder:
 
 .. code-block:: bash
 
-    # You can call directy the app passing the yaml path
+    # You can call directly the app passing the yaml path
     $ cd path/to/examples
     $ TEST_PROJECT_PATH=$(pwd) docker-compose up -d
     $ cabrita --path cabrita.yml
@@ -64,6 +64,7 @@ dashboard. Let's add two new options: ``port_view`` and ``port_detail`` on
 ``cabrita.yml``:
 
 .. code-block:: yaml
+
     version: 2
     title: My Docker Project
     background_color: grey # options: black, blue, cyan, grey, yellow, white
@@ -84,7 +85,36 @@ Customize Git info
 ******************
 
 For more git information, let's add two new options: ``show_revision`` and
-``target_branch``:
+``watch_branch``:
+
+.. code-block:: yaml
+
+    version: 2
+    title: My Docker Project
+    background_color: grey # options: black, blue, cyan, grey, yellow, white
+    compose_files:
+      - ./docker-compose.yml
+    boxes:
+      main_box:
+        main: true
+        name: My Services
+        port_view: status # options: column, name, status
+        port_detail: internal # options: internal, external or both
+        show_revision: true # will show commit hash and git tag if available
+
+The "**Branch**" column are displayed in each box, by default (you can
+disable it with the ``show_git: false`` option). This column shows the
+actual branch name for each service in box. If the branch is dirty (i.e.
+has non-committed modifications), text color will be yellow.
+
+The ``show_revision`` option show, for each service in box, the commit
+hash and git tag, if available.
+
+The watch branch
+*****************
+
+Frequently, we need to know if the *local code* we are running inside the containers are not up-to-date with
+the last modifications in the cloud. To resolve this, in the yaml file we can use the ``watch_branch`` option:
 
 .. code-block:: yaml
 
@@ -102,20 +132,51 @@ For more git information, let's add two new options: ``show_revision`` and
         show_revision: true # will show commit hash and git tag if available
         watch_branch: origin/staging # check how ahead or behind you are regard this branch
 
-The "**Branch**" column are displayed in each box, by default (you can
-disable it with the ``show_git: false`` option). This column shows the
-actual branch name for each service in box. If the branch is dirty (i.e.
-has non-committed modifications), text color will be yellow.
-
-The ``show_revision`` option show, for each service in box, the commit
-hash and git tag, if available.
-
 The ``watch_branch`` will add on "Branch" column how many commits ahead or
 behind the current branch are in comparison of the *watched* branch.
 
 The new dashboard will show:
 
 .. image:: assets/c1.png
+
+The NEED BUILD status
+*****************
+
+Other thing we frequently need to know if the *docker image* we are running is up-to-date with the last code modifications.
+If you're using `docker volumes`_ docker will automatically run the latest code inside containers. But how about modifications
+in ``Dockerfile``, ``requirements.txt``, ``package.json`` and such files?
+
+To resolve this, lets use two new options, called ``watch_for_build_using_files`` and ``watch_for_build_using_git``:
+
+.. code-block:: yaml
+
+    version: 2
+    title: My Docker Project
+    background_color: grey # options: black, blue, cyan, grey, yellow, white
+    compose_files:
+      - ./docker-compose.yml
+    boxes:
+      main_box:
+        main: true
+        name: My Services
+        port_view: status # options: column, name, status
+        port_detail: internal # options: internal, external or both
+        show_revision: true # will show commit hash and git tag if available
+        watch_branch: origin/staging # check how ahead or behind you are regard this branch
+      watch_for_build_using_files: # check if Dockerfile last modification date is greater than docker image build date
+        - Dockerfile
+      watch_for_build_using_git: # check if last commit date in flask project is greater than docker image build date
+        - flask
+
+The first option, ``watch_for_build_using_files``, means if any file inside list is located in the code folder, and if his
+last modification date is more recent than his docker image, that image needs to be rebuild.
+
+The second option, ``watch_for_build_using_git``, means if the date for the last commit is more recent than his docker image,
+that image needs to be reduild.
+
+Use the first, when you want to track for new builds using a bunch of files. Use the last, if any modification in project
+needs to start another build.
+
 
 Adding new boxes
 ****************
@@ -130,7 +191,6 @@ for django applications:
     background_color: grey # options: black, blue, cyan, grey, yellow, white
     compose_files:
       - ./docker-compose.yml
-      - ./docker-compose.override.yml
     boxes:
       main_box:
         main: true
@@ -139,6 +199,10 @@ for django applications:
         port_detail: internal # options: internal, external or both
         show_revision: true # will show commit hash and git tag if available
         watch_branch: origin/staging # check how ahead or behind you are regard this branch
+      watch_for_build_using_files: # check if Dockerfile last modification date is greater than docker image build date
+        - Dockerfile
+      watch_for_build_using_git: # check if last commit date in flask project is greater than docker image build date
+        - flask
       django:
         name: Django Apps
         show_git: false
@@ -154,8 +218,8 @@ The new dashboard will show:
 
 .. image:: assets/c1.png
 
-The "Django Apps" box will show 3 services. But we can understand these
-docker containers are just one big service in docker. Because they all
+The "Django Apps" box will show 3 services. But what if we understand these
+docker containers are just one big application in docker? Because they all
 got the same name - "django" - we can categorize all services in the
 same line, using the ``categories`` option:
 
@@ -166,7 +230,6 @@ same line, using the ``categories`` option:
     background_color: grey # options: black, blue, cyan, grey, yellow, white
     compose_files:
       - ./docker-compose.yml
-      - ./docker-compose.override.yml
     boxes:
       main_box:
         main: true
@@ -175,6 +238,10 @@ same line, using the ``categories`` option:
         port_detail: internal # options: internal, external or both
         show_revision: true # will show commit hash and git tag if available
         watch_branch: origin/staging # check how ahead or behind you are regard this branch
+      watch_for_build_using_files: # check if Dockerfile last modification date is greater than docker image build date
+        - Dockerfile
+      watch_for_build_using_git: # check if last commit date in flask project is greater than docker image build date
+        - flask
       django:
         name: Django Apps
         show_git: false
@@ -201,7 +268,6 @@ add a new watcher, to check internet connection:
     background_color: grey # options: black, blue, cyan, grey, yellow, white
     compose_files:
       - ./docker-compose.yml
-      - ./docker-compose.override.yml
     boxes:
       main_box:
         main: true
@@ -210,6 +276,10 @@ add a new watcher, to check internet connection:
         port_detail: internal # options: internal, external or both
         show_revision: true # will show commit hash and git tag if available
         watch_branch: origin/staging # check how ahead or behind you are regard this branch
+      watch_for_build_using_files: # check if Dockerfile last modification date is greater than docker image build date
+        - Dockerfile
+      watch_for_build_using_git: # check if last commit date in flask project is greater than docker image build date
+        - flask
       django:
         name: Django Apps
         show_git: false
