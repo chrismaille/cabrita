@@ -3,7 +3,7 @@
     <module name="cabrita" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
-    <option name="SDK_HOME" value="$PROJECT_DIR$/venv/bin/python" />
+    <option name="SDK_HOME" value="$USER_HOME$/.local/share/virtualenvs/cabrita-qocccWni/bin/python" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -13,6 +13,6 @@
     <option name="_new_additionalArguments" value="&quot;&quot;" />
     <option name="_new_target" value="&quot;cabrita.tests&quot;" />
     <option name="_new_targetType" value="&quot;PYTHON&quot;" />
-    <method />
+    <method v="2" />
   </configuration>
 </component>

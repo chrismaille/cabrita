@@ -198,6 +198,14 @@ class Box:
         return self.data.get('includes', [])
 
     @property
+    def show_not_found(self) -> bool:
+        """Return if cabrita will display services with images not found.
+
+        :return: bool
+        """
+        return bool(self.data.get('show_not_found', False))
+
+    @property
     def background_color(self) -> BoxColor:
         """Return the Box Color Enum.
 
@@ -298,7 +306,7 @@ class Box:
 
             can_skip = self.includes != []
             for include in self.includes:
-                if include in service:
+                if include.lower() in service:
                     can_skip = False
 
             if can_skip:
@@ -308,6 +316,9 @@ class Box:
 
             service_name = self._append_ports_in_field("name")
             service_status = self._append_ports_in_field("status")
+
+            if service_status.lower() == "not found" and not self.show_not_found:
+                continue
 
             table_data = [
                 format_color(service_name, self.data_inspected_from_service['style'],

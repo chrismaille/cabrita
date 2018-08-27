@@ -179,7 +179,6 @@ class DockerInspect(InspectTemplate):
         if not name:
             # Generate default_name
             name = os.path.basename(os.path.dirname(self.compose.full_path))
-            name = re.sub(r'[^A-Za-z0-9]+', '', name)
             name = "{}_{}_{}".format(name.lower(), service.lower(), index)
         return name
 
