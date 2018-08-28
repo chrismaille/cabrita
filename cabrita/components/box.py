@@ -433,14 +433,14 @@ class Box:
             for line in table_lines
         ]
         if largest_tag:
-            largest_tag = max(largest_tag)
+            largest_tag = max(largest_tag)  # type: ignore
         else:
             return table_lines
 
         new_lines = []
         for line in table_lines:
             tag = line[2].split("@")[0] if "@" in line[2] else ""
-            tag = tag.ljust(largest_tag + 1)
+            tag = tag.ljust(largest_tag + 1)  # type: ignore
             tag = formatStr.info(tag, use_prefix=False)
             commit_hash = line[2].split("@")[1] if "@" in line[2] else line[2]
             commit_hash = formatStr.info(commit_hash, use_prefix=False, theme="dark")
