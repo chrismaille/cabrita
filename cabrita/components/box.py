@@ -198,6 +198,14 @@ class Box:
         return self.data.get('includes', [])
 
     @property
+    def show_not_found(self) -> bool:
+        """Return if cabrita will display services when containers not found.
+
+        :return: bool
+        """
+        return bool(self.data.get('show_not_found', False))
+
+    @property
     def background_color(self) -> BoxColor:
         """Return the Box Color Enum.
 
@@ -298,7 +306,7 @@ class Box:
 
             can_skip = self.includes != []
             for include in self.includes:
-                if include in service:
+                if include.lower() in service:
                     can_skip = False
 
             if can_skip:
@@ -308,6 +316,9 @@ class Box:
 
             service_name = self._append_ports_in_field("name")
             service_status = self._append_ports_in_field("status")
+
+            if service_status.lower() == "not found" and not self.show_not_found:
+                continue
 
             table_data = [
                 format_color(service_name, self.data_inspected_from_service['style'],
@@ -417,15 +428,19 @@ class Box:
 
         :return: list
         """
-        largest_tag = max([
+        largest_tag = [
             len(line[2].split("@")[0] if "@" in line[2] else "")
             for line in table_lines
-        ])
+        ]
+        if largest_tag:
+            largest_tag = max(largest_tag)  # type: ignore
+        else:
+            return table_lines
 
         new_lines = []
         for line in table_lines:
             tag = line[2].split("@")[0] if "@" in line[2] else ""
-            tag = tag.ljust(largest_tag + 1)
+            tag = tag.ljust(largest_tag + 1)  # type: ignore
             tag = formatStr.info(tag, use_prefix=False)
             commit_hash = line[2].split("@")[1] if "@" in line[2] else line[2]
             commit_hash = formatStr.info(commit_hash, use_prefix=False, theme="dark")
