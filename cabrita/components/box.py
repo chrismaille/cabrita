@@ -199,7 +199,7 @@ class Box:
 
     @property
     def show_not_found(self) -> bool:
-        """Return if cabrita will display services with images not found.
+        """Return if cabrita will display services when containers not found.
 
         :return: bool
         """
@@ -428,10 +428,14 @@ class Box:
 
         :return: list
         """
-        largest_tag = max([
+        largest_tag = [
             len(line[2].split("@")[0] if "@" in line[2] else "")
             for line in table_lines
-        ])
+        ]
+        if largest_tag:
+            largest_tag = max(largest_tag)
+        else:
+            return table_lines
 
         new_lines = []
         for line in table_lines:
