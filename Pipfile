@@ -65,11 +65,11 @@ Jinja2 = "==2.10"
 MarkupSafe = "==1.0"
 prompt_toolkit = "==1.0.15"
 Pygments = "==2.2.0"
-PyYAML = ">4.2b1"
+PyYAML = "==4.2b4"
 Sphinx = "==1.7.4"
 sphinx_rtd_theme = "==0.3.1"
 Unidecode = "==1.0.22"
-urllib3 = ">1.23"
+urllib3 = "==1.24.1"
 pipenv = "*"
 
 [requires]
