@@ -27,6 +27,7 @@ class TestDockerInspect(TestCase):
         command.prepare_dashboard()
         cls.docker = command.dashboard.all_boxes[3].docker
 
+    @mock.patch('cabrita.abc.utils.persist_on_disk')
     def test_inspect(self, *mocks):
 
         def _return_inspect_data(*args, **kwargs):
