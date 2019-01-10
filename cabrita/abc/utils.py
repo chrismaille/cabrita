@@ -60,7 +60,6 @@ def get_path(path: str, base_path: str) -> str:
     Converts environment variables to path
     Converts relative path to full path
     """
-
     def _convert_env_to_path(env_in_path):
         s = re.search(r"\${(\w+)}", env_in_path)
         if not s:
@@ -96,6 +95,7 @@ def format_color(text: str, style: str, theme: str = None) -> str:
 
 
 def persist_on_disk(operation, service, folder):
+    """Persist or remove in disk the service which needs action."""
     base_path = str(Path.home())
     config_path = os.path.join(base_path, '.cabrita')
     file_path = os.path.join(config_path, folder, service)
