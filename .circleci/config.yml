@@ -1,0 +1,78 @@
+version: 2
+jobs:
+  build_test_python3.5:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+      - run:
+          name: Install Pipenv
+          command: pip install -U pipenv
+      - run:
+          name: Build
+          command: pipenv install --system --deploy
+      - run:
+          name: Test
+          command: make test
+  build_test_python3.6:
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          name: Install Pipenv
+          command: pip install -U pipenv
+      - run:
+          name: Build
+          command: pipenv install --system --deploy
+      - run:
+          name: Test
+          command: make test
+  build_test_python3.7:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: Install Pipenv
+          command: pip install -U pipenv
+      - run:
+          name: Build
+          command: pipenv install --system --deploy
+      - run:
+          name: Test
+          command: make test
+  release:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          name: Install Changelog Libs
+          command: |
+            sudo apt-get install -y jq
+      - run:
+          name: Create Changelog
+          command: make changelog
+      - run:
+          name: Save Release
+          command: make release
+      - run:
+          name: Publish Package
+          command: make deploy
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - build_test_python3.5
+      - build_test_python3.6
+      - build_test_python3.7
+      - release:
+          requires:
+            - build_test_python3.5
+            - build_test_python3.6
+            - build_test_python3.7
+          filters:
+            branches:
+              only:
+                - master

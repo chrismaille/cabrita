@@ -5,14 +5,11 @@ This module contains the Dashboard class,
 which is responsible to build all dashing widgets from boxes
 generate the layout and display it in terminal.
 """
-import os
 import signal
 import sys
 from datetime import datetime
 from multiprocessing import TimeoutError
 from multiprocessing.pool import Pool
-from pathlib import Path
-from time import sleep
 from typing import List, Union
 
 from blessed import Terminal
@@ -24,10 +21,6 @@ from dashing.dashing import HSplit, VSplit
 from cabrita.abc.utils import get_sentry_client
 from cabrita.components.box import Box, update_box
 from cabrita.components.config import Config
-
-CONFIG_PATH = os.path.join(str(Path.home()), '.cabrita')
-os.makedirs(os.path.join(CONFIG_PATH, 'need_build'), exist_ok=True)
-os.makedirs(os.path.join(CONFIG_PATH, 'need_update'), exist_ok=True)
 
 
 class Dashboard:

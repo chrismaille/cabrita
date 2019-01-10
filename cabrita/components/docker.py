@@ -106,9 +106,9 @@ class DockerInspect(InspectTemplate):
                 index += 1
 
         if need_build:
-            persist_on_disk('add', service, 'need_build')
+            persist_on_disk('add', service, 'need_image')
         else:
-            persist_on_disk('remove', service, 'need_build')
+            persist_on_disk('remove', service, 'need_image')
 
         if len(result_list) == 1:
             service_status = result_list[0][0]
