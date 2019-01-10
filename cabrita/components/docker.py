@@ -8,16 +8,15 @@ each service in dashboard.
 import datetime
 import json
 import os
-import re
 import time
 from collections import Counter
 from enum import Enum
-from typing import List, Tuple, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from tzlocal import get_localzone
 
 from cabrita.abc.base import InspectTemplate
-from cabrita.abc.utils import get_path
+from cabrita.abc.utils import get_path, persist_on_disk
 from cabrita.components.config import Compose
 
 IN = u"↗"
@@ -89,6 +88,7 @@ class DockerInspect(InspectTemplate):
         index = 1
         all_containers_processed = False
         result_list = []  # type: list
+        need_build = False
         while not all_containers_processed:
             container_name = self._get_container_name(service, index)
             inspect_data = self._get_inspect_data(container_name)
@@ -98,16 +98,26 @@ class DockerInspect(InspectTemplate):
                     result_list.append(("Not Found", "info", "dark"))
                 all_containers_processed = True
             elif self._need_build(service, inspect_data):
+                need_build = True
                 result_list.append(("NEED BUILD", "error", None))
                 index += 1
             else:
                 result_list.append(self._define_status(inspect_data))
                 index += 1
 
+        if need_build:
+            persist_on_disk('add', service, 'need_build')
+        else:
+            persist_on_disk('remove', service, 'need_build')
+
         if len(result_list) == 1:
             service_status = result_list[0][0]
             text_style = result_list[0][1]
             text_theme = result_list[0][2]
+        elif need_build:
+            service_status = "NEED BUILD"
+            text_style = "error"
+            text_theme = None
         else:
             stats = Counter([result[0] for result in result_list]).most_common()[0][0]
             service_status = "{}{}".format(

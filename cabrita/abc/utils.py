@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 from buzio import formatStr
@@ -59,6 +60,7 @@ def get_path(path: str, base_path: str) -> str:
     Converts environment variables to path
     Converts relative path to full path
     """
+
     def _convert_env_to_path(env_in_path):
         s = re.search(r"\${(\w+)}", env_in_path)
         if not s:
@@ -91,3 +93,15 @@ def format_color(text: str, style: str, theme: str = None) -> str:
     """Format string with color using formatStr method."""
     func = getattr(formatStr, style)
     return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)
+
+
+def persist_on_disk(operation, service, folder):
+    base_path = str(Path.home())
+    config_path = os.path.join(base_path, '.cabrita')
+    file_path = os.path.join(config_path, folder, service)
+    if operation == "add":
+        with open(file_path, 'w+') as file:
+            file.write(service)
+    else:
+        if os.path.exists(file_path):
+            os.remove(file_path)
