@@ -10,7 +10,7 @@ jobs:
           command: pip install -U --user pipenv
       - run:
           name: Build
-          command: pipenv install --user --system --deploy
+          command: sudo pipenv install --system --deploy
       - run:
           name: Test
           command: make test
@@ -24,7 +24,7 @@ jobs:
           command: pip install -U --user pipenv
       - run:
           name: Build
-          command: pipenv install --user --system --deploy
+          command: sudo pipenv install --system --deploy
       - run:
           name: Test
           command: make test
@@ -38,7 +38,7 @@ jobs:
           command: pip install -U --user pipenv
       - run:
           name: Build
-          command: pipenv install --user --system --deploy
+          command: sudo pipenv install --system --deploy
       - run:
           name: Test
           command: make test
