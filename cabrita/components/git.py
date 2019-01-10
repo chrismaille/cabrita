@@ -12,6 +12,7 @@ from typing import Tuple
 from buzio import formatStr
 
 from cabrita.abc.base import InspectTemplate
+from cabrita.abc.utils import persist_on_disk
 from cabrita.components.config import Compose
 
 ARROW_UP = u"↑"
@@ -162,6 +163,10 @@ class GitInspect(InspectTemplate):
                 if self.branch_is_dirty() else formatStr.success(
                 text,
                 use_prefix=False)
+            if target_branch_behind != 0:
+                persist_on_disk('add', service, 'need_update')
+            else:
+                persist_on_disk('remove', service, 'need_update')
         else:
             self._status[service] = formatStr.error(
                 "Branch Not Found",
