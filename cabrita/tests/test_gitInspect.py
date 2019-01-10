@@ -63,7 +63,7 @@ class TestGitInspect(TestCase):
         test_behind = self.git.get_behind_state('/')
         self.assertEqual(test_behind, u'[31mNEED PULL[22m')
 
-    @mock.patch('cabrita.abc.utils.persist_on_disk')
+    @mock.patch('cabrita.components.git.persist_on_disk')
     @mock.patch('cabrita.abc.utils.run_command', side_effect=return_git_result)
     def test_inspect(self, *mocks):
         self.git.run = mocks[0]
