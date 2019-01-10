@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 from buzio import formatStr
@@ -91,3 +92,16 @@ def format_color(text: str, style: str, theme: str = None) -> str:
     """Format string with color using formatStr method."""
     func = getattr(formatStr, style)
     return func(text, use_prefix=False, theme=theme) if theme else func(text, use_prefix=False)
+
+
+def persist_on_disk(operation, service, folder):
+    """Persist or remove in disk the service which needs action."""
+    base_path = str(Path.home())
+    config_path = os.path.join(base_path, '.cabrita')
+    file_path = os.path.join(config_path, folder, service)
+    if operation == "add":
+        with open(file_path, 'w+') as file:
+            file.write(service)
+    else:
+        if os.path.exists(file_path):
+            os.remove(file_path)
