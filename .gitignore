@@ -103,3 +103,4 @@ venv*/
 /examples/django_app/db.sqlite3
 
 .idea
+poetry.lock

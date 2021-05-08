@@ -4,7 +4,7 @@ install:
 
 update:
 	@poetry update
-	#@poetry run pre-commit autoupdate
+	@poetry run pre-commit autoupdate
 
 test:
 	@poetry run pytest -v -x -p no:warnings --cov-report term-missing --cov=./marshmallow_pynamodb
