@@ -1,7 +1,7 @@
 name: publish
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 jobs:
   publish:
     if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'chore(release):')
