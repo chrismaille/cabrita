@@ -28,3 +28,4 @@ jobs:
           poetry run pytest --cov=./cabrita
         env:
           TEST_PROJECT_PATH: /home/runner/work/cabrita/cabrita/examples
+          CABRITA_PATH: /home/runner/work/cabrita/cabrita/examples/config/cabrita-v2.yml
