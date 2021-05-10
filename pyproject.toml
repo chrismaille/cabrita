@@ -44,7 +44,7 @@ build_command = "python -m pip install -U twine poetry && poetry build"
 
 [tool.poetry]
 name = "cabrita"
-version = "3.0.0"
+version = "3.0.1"
 description = "Create dashboard from docker-compose.yml"
 authors = ["Chris Maillefaud <chris@megalus.com.br>"]
 classifiers=[

@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v3.0.1 (2021-05-10)
+### Fix
+* Bump version ([`396d46b`](https://github.com/chrismaille/cabrita/commit/396d46bb9a84342658cadefc1d0cbb5237b2d205))
+
 ## v3.0.0 (2021-05-10)
 ### Feature
 * Fix old Dependencies and python versions ([`ba606dc`](https://github.com/chrismaille/cabrita/commit/ba606dcc168584f7349c22edd0c7a246962ea330))
