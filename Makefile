@@ -7,20 +7,10 @@ update:
 	@poetry run pre-commit autoupdate
 
 test:
-	@poetry run pytest -v -x -p no:warnings --cov-report term-missing --cov=./marshmallow_pynamodb
+	@poetry run pytest -v -x -p no:warnings --cov-report term-missing --cov=./cabrita
 
 ci:
-	@poetry run pytest --cov=./marshmallow_pynamodb --black --flake8
+	@poetry run pytest --cov=./cabrita --black --flake8
 
 format:
 	@poetry run black .
-
-dynamodb:
-	docker run -p 8000:8000 amazon/dynamodb-local
-changelog:
-	echo "TODO"
-release:
-	echo "TODO"
-deploy:
-	python setup.py sdist bdist_wheel
-	twine upload dist/*

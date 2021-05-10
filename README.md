@@ -1,9 +1,7 @@
 ## Welcome to Cabrita's documentation!
 
 ![PyPI](https://img.shields.io/pypi/v/cabrita.svg)
-[![Build Status](https://travis-ci.org/chrismaille/cabrita.svg?branch=master)](https://travis-ci.org/chrismaille/cabrita)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cabrita.svg)
-[![Coverage Status](https://coveralls.io/repos/github/chrismaille/cabrita/badge.svg?branch=master)](https://coveralls.io/github/chrismaille/cabrita?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/cabrita/badge/?version=latest)](https://cabrita.readthedocs.io/en/latest/?badge=latest)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/ea94adacb6664984916474a909c4c4e4)](https://www.codacy.com/app/chrismaille/cabrita?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=chrismaille/cabrita&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/3475b300e01e18d8c9e8/maintainability)](https://codeclimate.com/github/chrismaille/cabrita/maintainability)
