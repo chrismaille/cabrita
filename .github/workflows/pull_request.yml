@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest ]
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        python-version: [ 3.7, 3.8, 3.9 ]
     steps:
       - name: Checkout Branch
         uses: actions/checkout@v2
@@ -20,11 +20,8 @@ jobs:
       - name: Install Project
         run: |
           poetry install
-      - name: Setup DynamoDB Local
-        uses: rrainn/dynamodb-action@v2.0.0
-        with:
-          port: 8000
-          cors: '*'
+      - name: submodules-init
+        uses: snickerbockers/submodules-init@v4
       - name: Run Tests
         run: |
           poetry run pytest --cov=./cabrita
