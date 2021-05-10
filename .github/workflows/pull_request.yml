@@ -20,11 +20,11 @@ jobs:
       - name: Install Project
         run: |
           poetry install
-      - name: submodules-init
+      - name: Submodules Init
         uses: snickerbockers/submodules-init@v4
       - name: Run Tests
         run: |
           poetry run pytest --cov=./cabrita
         env:
-          TEST_PROJECT_PATH: /home/runner/work/cabrita
-          CABRITA_PATH: /home/runner/work/cabrita/examples/config/cabrita-v2.yml
+          TEST_PROJECT_PATH: /home/runner/work/cabrita/examples
+          CABRITA_PATH: ./config/cabrita-v2.yml
