@@ -43,7 +43,7 @@ class TestBox(TestCase):
     @mock.patch("cabrita.components.docker.DockerInspect")
     def setUp(self, *args):
         compose_mock = args[2]
-        with open("./examples/docker-compose.yml") as file:
+        with open("./sheep/docker-compose.yml") as file:
             compose_data = yaml.load(file.read())
         compose_mock.services = compose_data["services"]
 

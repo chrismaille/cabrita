@@ -54,14 +54,14 @@ class TestConfig(TestCase):
     def test_get_compose_path(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = str(Path(current_dir).parent.parent)
-        os.environ["TEST_PROJECT_PATH"] = os.path.join(parent_dir, "examples")
+        os.environ["TEST_PROJECT_PATH"] = os.path.join(parent_dir, "sheep")
         self.assertEqual(
             Path(
                 self.config.get_compose_path(
                     "$TEST_PROJECT_PATH/docker-compose.yml", parent_dir
                 )
             ),
-            Path(os.path.join(parent_dir, "examples/docker-compose.yml")).resolve(),
+            Path(os.path.join(parent_dir, "sheep/docker-compose.yml")).resolve(),
         )
 
     def test_generate_boxes(self):
@@ -95,7 +95,7 @@ class TestConfig(TestCase):
 
     def test_bad_config(self):
         self.config = Config()
-        self.config.add_path("./examples/config/cabrita-v2.yml")
+        self.config.add_path("./sheep/config/cabrita-v2.yml")
         self.config.load_file_data()
         self.config.data["layout"] = "triangular"
         self.config.data["background_color"] = "no_color"

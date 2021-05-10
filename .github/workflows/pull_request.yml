@@ -22,10 +22,10 @@ jobs:
           poetry install
       - name: Submodules Init
         run: |
-          git submodule init
+          git submodule update --init --recursive
       - name: Run Tests
         run: |
           poetry run pytest --cov=./cabrita
         env:
-          TEST_PROJECT_PATH: /home/runner/work/cabrita/cabrita/examples
-          CABRITA_PATH: /home/runner/work/cabrita/cabrita/examples/config/cabrita-v2.yml
+          TEST_PROJECT_PATH: /home/runner/work/cabrita/cabrita/sheep
+          CABRITA_PATH: /home/runner/work/cabrita/cabrita/sheep/config/cabrita-v2.yml

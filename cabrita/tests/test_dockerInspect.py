@@ -31,7 +31,7 @@ class TestDockerInspect(TestCase):
     @mock.patch("cabrita.components.docker.persist_on_disk")
     def test_inspect(self, *mocks):
         def _return_inspect_data(*args, **kwargs):
-            if "examples_django_1" in args[0]:
+            if "sheep_django_1" in args[0]:
                 return INSPECT_DJANGO_CONTAINER
             else:
                 return None
@@ -53,7 +53,7 @@ class TestDockerInspect(TestCase):
 
     def test__get_container_name(self):
         test_name = self.docker._get_container_name("django")
-        self.assertEqual(test_name, "examples_django_1")
+        self.assertEqual(test_name, "sheep_django_1")
 
     @mock.patch("cabrita.abc.utils.run_command", return_value=INSPECT_DJANGO_CONTAINER)
     def test__get_inspect_data(self, *mocks):

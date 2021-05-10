@@ -9,8 +9,8 @@ class TestConfig(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.manual_files = [
-            "./examples/docker-compose.yml",
-            "./examples/docker-compose.override.yml",
+            "./sheep/docker-compose.yml",
+            "./sheep/docker-compose.override.yml",
         ]
         self._generate_config()
 

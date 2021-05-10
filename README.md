@@ -84,12 +84,12 @@ watchers:
       message_on_error: DOWN
 ```
 
-Let's use our docker project located in `/examples` folder. To start
+Let's use our docker project located in `/sheep` folder. To start
 cabrita with the new setup you can type:
 
 ```bash
 # Start docker project services first
-$ cd path/to/examples
+$ cd path/to/sheep
 $ TEST_PROJECT_PATH=$(pwd) docker-compose up -d
 
 # Then, you can call directy the app passing the yaml path:
