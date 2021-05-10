@@ -1,5 +1,16 @@
+install:
+	@poetry install
+	@poetry run pre-commit install -f
+
+update:
+	@poetry update
+	@poetry run pre-commit autoupdate
+
 test:
-	nosetests --with-coverage --cover-package=cabrita --cover-min-percentage=85
-	pydocstyle cabrita/
-	pycodestyle --max-line-length=120 --exclude=cabrita/tests/__init__.py cabrita/
-	mypy -p cabrita --ignore-missing-imports --no-implicit-optional --no-strict-optional
+	@poetry run pytest -v -x -p no:warnings --cov-report term-missing --cov=./cabrita
+
+ci:
+	@poetry run pytest --cov=./cabrita --black --flake8
+
+format:
+	@poetry run black .

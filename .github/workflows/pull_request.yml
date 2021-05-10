@@ -1,0 +1,30 @@
+name: pull_request
+on: [pull_request]
+jobs:
+  # Run on every Pull Request
+  build_and_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python-version: [ 3.7, 3.8, 3.9 ]
+    steps:
+      - name: Checkout Branch
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setups Python
+        uses: actions/setup-python@v2
+      - name: Update tools
+        run: python -m pip install --upgrade pip setuptools wheel
+      - name: Setup Poetry
+        uses: abatilo/actions-poetry@v2.1.0
+      - name: Install Project
+        run: |
+          poetry install
+      - name: Run Tests
+        run: |
+          poetry run pytest --cov=./cabrita
+        env:
+          TEST_PROJECT_PATH: /home/runner/work/cabrita/cabrita/sheep
+          CABRITA_PATH: /home/runner/work/cabrita/cabrita/sheep/config/cabrita-v2.yml

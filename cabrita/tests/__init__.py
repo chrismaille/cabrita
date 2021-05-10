@@ -4,10 +4,9 @@ Tests init sub-package.
 This subpackage contain all unit tests.
 This file contains mocked data from docker inspect command.
 """
-LATEST_CONFIG_PATH = './examples/config/cabrita-v2.yml'
+LATEST_CONFIG_PATH = "./sheep/config/cabrita-v2.yml"
 
-INSPECT_DJANGO_CONTAINER = \
-    '''
+INSPECT_DJANGO_CONTAINER = """
     [
         {
             "Id": "b075cee9bc12b262d99ff7068750acb3ac87ceadbffb0f4d040bb2f17521b7cc",
@@ -36,7 +35,7 @@ INSPECT_DJANGO_CONTAINER = \
             "HostnamePath": "/var/lib/docker/containers/b075cee9bc12b262d99ff7068750acb3ac87ceadbffb0f4d040bb2f17521b7cc/hostname",
             "HostsPath": "/var/lib/docker/containers/b075cee9bc12b262d99ff7068750acb3ac87ceadbffb0f4d040bb2f17521b7cc/hosts",
             "LogPath": "/var/lib/docker/containers/b075cee9bc12b262d99ff7068750acb3ac87ceadbffb0f4d040bb2f17521b7cc/b075cee9bc12b262d99ff7068750acb3ac87ceadbffb0f4d040bb2f17521b7cc-json.log",
-            "Name": "/examples_django_1",
+            "Name": "/sheep_django_1",
             "RestartCount": 0,
             "Driver": "overlay2",
             "Platform": "linux",
@@ -53,7 +52,7 @@ INSPECT_DJANGO_CONTAINER = \
                     "Type": "json-file",
                     "Config": {}
                 },
-                "NetworkMode": "examples_backend",
+                "NetworkMode": "sheep_backend",
                 "PortBindings": {
                     "8080/tcp": [
                         {
@@ -221,7 +220,7 @@ INSPECT_DJANGO_CONTAINER = \
                 "IPv6Gateway": "",
                 "MacAddress": "",
                 "Networks": {
-                    "examples_backend": {
+                    "sheep_backend": {
                         "IPAMConfig": null,
                         "Links": null,
                         "Aliases": [
@@ -243,10 +242,9 @@ INSPECT_DJANGO_CONTAINER = \
             }
         }
     ]
-    '''
+    """
 
-INSPECT_DJANGO_IMAGE = \
-    '''
+INSPECT_DJANGO_IMAGE = """
     [
         {
             "Id": "sha256:f17b832c2c7e7449d763b8a7e78d1c95ce34f19fe75701f1314733d404809d5b",
@@ -362,4 +360,4 @@ INSPECT_DJANGO_IMAGE = \
             }
         }
     ]
-    '''
+    """

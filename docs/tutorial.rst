@@ -38,12 +38,12 @@ which are not included in any other box, will be added here.
 To use this file, use the ``--path`` option for cabrita command line. You
 can also define the ``CABRITA_PATH`` environment variable for this path.
 
-Using the our docker-compose in ``/examples`` folder:
+Using the our docker-compose in ``/sheep`` folder:
 
 .. code-block:: bash
 
     # You can call directly the app passing the yaml path
-    $ cd path/to/examples
+    $ cd path/to/sheep
     $ TEST_PROJECT_PATH=$(pwd) docker-compose up -d
     $ cabrita --path cabrita.yml
 
