@@ -37,14 +37,14 @@ version_variable = [
     "cabrita/__init__.py:__version__",
     "pyproject.toml:version"
 ]
-branch = "master"
+branch = "main"
 upload_to_pypi = true
 upload_to_release = true
 build_command = "python -m pip install -U twine poetry && poetry build"
 
 [tool.poetry]
 name = "cabrita"
-version = "2.2.1"
+version = "3.0.0"
 description = "Create dashboard from docker-compose.yml"
 authors = ["Chris Maillefaud <chris@megalus.com.br>"]
 classifiers=[
