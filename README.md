@@ -104,6 +104,6 @@ Your Dashboard will show like this:
 
 ### More Info
 
-- For more advanced customization, please check the tutorial
+- For more advanced customization, please check the *tutorial*
 - For the complete list of cabrita options, please check the *Cabrita
   File Reference*
