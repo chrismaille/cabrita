@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout Branch
         uses: actions/checkout@v2
+        with:
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setups Python
         uses: actions/setup-python@v2
       - name: Update tools
@@ -20,9 +23,6 @@ jobs:
       - name: Install Project
         run: |
           poetry install
-      - name: Submodules Init
-        run: |
-          git submodule update --init --recursive
       - name: Run Tests
         run: |
           poetry run pytest --cov=./cabrita
