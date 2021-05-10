@@ -22,7 +22,7 @@ jobs:
           poetry install
       - name: Submodules Init
         run: |
-          git submodules init
+          git submodule init
       - name: Run Tests
         run: |
           poetry run pytest --cov=./cabrita
